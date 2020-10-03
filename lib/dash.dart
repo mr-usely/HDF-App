@@ -11,6 +11,8 @@ class HDFhome extends StatefulWidget {
   _HDFhomeState createState() => _HDFhomeState(idname);
 }
 
+MediaQueryData queryData;
+
 class _HDFhomeState extends State<HDFhome> {
   int idname;
   _HDFhomeState(this.idname);
@@ -28,69 +30,73 @@ class _HDFhomeState extends State<HDFhome> {
 
   @override
   Widget build(BuildContext context) {
+    queryData = MediaQuery.of(context);
     var tab = Column(
       children: [
         Card(
             margin: const EdgeInsets.only(left: 10.0, right: 10.0, top: 15.0),
             elevation: 10,
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: ButtonBar(
-                children: <Widget>[
-                  Container(
-                      margin: const EdgeInsets.only(
-                          left: 10.0, right: 5.0, top: 10.0, bottom: 10.0),
-                      child: new FlatButton(
-                          onPressed: () {
-                            setState(() {
-                              tabs = 1;
-                            });
-                          },
-                          child: new Row(children: <Widget>[
-                            new Image.asset('asset/img/health.png',
-                                height: 40.0, width: 40.0),
-                            Container(
-                              margin: EdgeInsets.only(left: 10.0),
-                              child: new Text('List to\nAccomplish',
-                                  style: TextStyle(
-                                      fontFamily: 'Open Sans',
-                                      fontSize: 15.0,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w800)),
-                            ),
-                          ]))),
-                  Container(
-                    padding: EdgeInsets.only(right: 15, left: 15),
-                    height: 50,
-                    child: VerticalDivider(
-                      color: Colors.black45,
+            child: Container(
+              width: queryData.size.width * 0.95,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: ButtonBar(
+                  children: <Widget>[
+                    Container(
+                        margin: const EdgeInsets.only(
+                            left: 10.0, right: 5.0, top: 10.0, bottom: 10.0),
+                        child: new FlatButton(
+                            onPressed: () {
+                              setState(() {
+                                tabs = 1;
+                              });
+                            },
+                            child: new Row(children: <Widget>[
+                              new Image.asset('asset/img/health.png',
+                                  height: 40.0, width: 40.0),
+                              Container(
+                                margin: EdgeInsets.only(left: 10.0),
+                                child: new Text('List to\nAccomplish',
+                                    style: TextStyle(
+                                        fontFamily: 'Open Sans',
+                                        fontSize: 15.0,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w800)),
+                              ),
+                            ]))),
+                    Container(
+                      padding: EdgeInsets.only(right: 15, left: 15),
+                      height: 50,
+                      child: VerticalDivider(
+                        color: Colors.black45,
+                      ),
                     ),
-                  ),
-                  Container(
-                      padding: const EdgeInsets.only(
-                          left: 9.0, right: 10.0, top: 10.0, bottom: 10.0),
-                      child: new FlatButton(
-                          onPressed: () {
-                            setState(() {
-                              tabs = 0;
-                            });
-                          },
-                          child: new Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                new Image.asset('asset/img/report.png',
-                                    height: 40.0, width: 40.0),
-                                Container(
-                                  padding: EdgeInsets.only(left: 10.0),
-                                  child: new Text('Reports',
-                                      style: TextStyle(
-                                          fontFamily: 'Open Sans',
-                                          fontSize: 15.0,
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.w800)),
-                                ),
-                              ])))
-                ],
+                    Container(
+                        padding: const EdgeInsets.only(
+                            left: 9.0, right: 10.0, top: 10.0, bottom: 10.0),
+                        child: new FlatButton(
+                            onPressed: () {
+                              setState(() {
+                                tabs = 0;
+                              });
+                            },
+                            child: new Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  new Image.asset('asset/img/report.png',
+                                      height: 40.0, width: 40.0),
+                                  Container(
+                                    padding: EdgeInsets.only(left: 10.0),
+                                    child: new Text('Reports',
+                                        style: TextStyle(
+                                            fontFamily: 'Open Sans',
+                                            fontSize: 15.0,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w800)),
+                                  ),
+                                ])))
+                  ],
+                ),
               ),
             )),
       ],
@@ -110,7 +116,7 @@ class _HDFhomeState extends State<HDFhome> {
           appBar: AppBar(
             centerTitle: true,
             title: Text(
-              'Health Declaration',
+              'ULPI Health Declaration',
               style: TextStyle(
                   fontFamily: 'Open Sans',
                   fontSize: 20.0,
@@ -122,12 +128,10 @@ class _HDFhomeState extends State<HDFhome> {
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 15),
-                child: GestureDetector(
-                  child: Icon(
-                    Icons.account_circle,
-                    color: Colors.grey,
-                    size: 40,
-                  ),
+                child: Icon(
+                  Icons.account_circle,
+                  color: Colors.grey,
+                  size: 40,
                 ),
               ),
             ],

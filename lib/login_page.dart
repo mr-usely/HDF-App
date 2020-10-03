@@ -15,20 +15,23 @@ final _formKey = GlobalKey<FormState>();
 class User {
   final String name;
   final String id;
+  final String employeeID;
   final String position;
   final String hdf;
 
-  User(this.name, this.id, this.position, this.hdf);
+  User(this.name, this.id, this.employeeID, this.position, this.hdf);
 
   User.fromJson(Map<String, dynamic> json)
       : name = json['name'],
         id = json['id'],
+        employeeID = json['employeeID'],
         position = json['position'],
         hdf = json['hdf'];
 
   Map<String, dynamic> toJson() => {
         'name': name,
         'id': id,
+        'employeeID': employeeID,
         'position': position,
         'hdf': hdf,
       };
@@ -72,12 +75,14 @@ class _LogInPageState extends State<LogInPage> {
           // ];
           print(response);
           var id = int.parse(response.id);
+          var eid = int.parse(response.employeeID);
           if (response.hdf == "true") {
             Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (context) => HDFform(
                       id: id,
+                      employeeID: eid,
                       name: '${response.name}',
                       position: '${response.position}')),
             );
@@ -93,6 +98,7 @@ class _LogInPageState extends State<LogInPage> {
         }
       } else {
         print('Username or Password is Incorrect!');
+        showAlertDialog(context);
       }
     } else if (_usernameController.text.isEmpty ||
         _passwordController.text.isEmpty) {
@@ -189,6 +195,7 @@ class _LogInPageState extends State<LogInPage> {
                       Container(
                           margin: const EdgeInsets.only(left: 220, top: 15),
                           child: new SizedBox(
+                            height: 40,
                             child: FlatButton(
                               onPressed: navigate,
                               child: const Text(

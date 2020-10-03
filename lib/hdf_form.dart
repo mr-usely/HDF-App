@@ -8,13 +8,22 @@ import 'package:HDF_App/dash.dart';
 class HDFform extends StatefulWidget {
   final int id;
   final int idEmployee;
+  final int employeeid;
+  final int employeeID;
   final String name;
   final String position;
   HDFform(
-      {Key key, @required this.id, this.name, this.position, this.idEmployee})
+      {Key key,
+      @required this.id,
+      this.employeeID,
+      this.employeeid,
+      this.name,
+      this.position,
+      this.idEmployee})
       : super(key: key);
   @override
-  _HDFformState createState() => _HDFformState(id, name, position, idEmployee);
+  _HDFformState createState() =>
+      _HDFformState(id, employeeID, name, position, idEmployee, employeeid);
 }
 
 class AnswerList {
@@ -27,14 +36,18 @@ class _HDFformState extends State<HDFform> {
   GlobalKey<FormState> _homeKey =
       GlobalKey<FormState>(debugLabel: '_homeScreenkey');
 
-  int id;
-  int idEmployee;
-  String name;
-  String position;
-  _HDFformState(this.id, this.name, this.position, this.idEmployee);
+  int id; // Superior ID
+  int idEmployee; //Superior Employee ID
+  int employeeID; // employee ID
+  int employeeid; // employee User ID
+  String name; // employee name
+  String position; // employee position
+  _HDFformState(this.id, this.employeeID, this.name, this.position,
+      this.idEmployee, this.employeeid);
 
   //set Id for Identification
   int userId = 0;
+  int empID = 0;
 
   TextEditingController othersController = TextEditingController();
   TextEditingController temperatureController = TextEditingController();
@@ -52,16 +65,16 @@ class _HDFformState extends State<HDFform> {
   int id4 = 2;
 
   Map<String, bool> symptoms = {
-    'fever': false,
-    'soreThroat': false,
-    'diarrhea': false,
-    'bodyAches': false,
-    'headAches': false,
-    'dryCough': false,
-    'shortnessBreath': false,
-    'tirednessFatigue': false,
-    'runnyNose': false,
-    'lossSmellTaste': false,
+    'Fever': false,
+    'Sore Throat': false,
+    'Diarrhea': false,
+    'Body Aches': false,
+    'Head Aches': false,
+    'Dry Cough': false,
+    'Shortness of Breath': false,
+    'Tiredness/Fatigue': false,
+    'Runny Nose': false,
+    'Loss of Smell/Taste': false,
     'noneAbove': false,
   };
 
@@ -92,49 +105,37 @@ class _HDFformState extends State<HDFform> {
   String hold2 = '';
   bool value;
 
-  bool validateTemperature(String userInput) {
-    if (userInput.contains(RegExp("0-9"))) {
-      setState(() {
-        isTemperatureValidate = true;
-      });
-    }
-    setState(() {
-      isTemperatureValidate = false;
-    });
-    return true;
-  }
-
   othersButton() {
     othersController.text;
   }
 
   noneOfAbove() {
     if (symptoms['noneAbove'] == true) {
-      symptoms['fever'] = false;
-      symptoms['soreThroat'] = false;
-      symptoms['diarrhea'] = false;
-      symptoms['bodyAches'] = false;
-      symptoms['headAches'] = false;
-      symptoms['dryCough'] = false;
-      symptoms['tirednessFatigue'] = false;
-      symptoms['shortnessBreath'] = false;
-      symptoms['runnyNose'] = false;
-      symptoms['lossSmellTaste'] = false;
+      symptoms['Fever'] = false;
+      symptoms['Sore Throat'] = false;
+      symptoms['Diarrhea'] = false;
+      symptoms['Body Aches'] = false;
+      symptoms['Head Aches'] = false;
+      symptoms['Dry Cough'] = false;
+      symptoms['Tiredness/Fatigue'] = false;
+      symptoms['Shortness of Breath'] = false;
+      symptoms['Runny Nose'] = false;
+      symptoms['Loss of Smell/Taste'] = false;
       others['others'] = false;
     }
   }
 
   clear() {
-    symptoms['fever'] = false;
-    symptoms['soreThroat'] = false;
-    symptoms['diarrhea'] = false;
-    symptoms['bodyAches'] = false;
-    symptoms['headAches'] = false;
-    symptoms['dryCough'] = false;
-    symptoms['tirednessFatigue'] = false;
-    symptoms['shortnessBreath'] = false;
-    symptoms['runnyNose'] = false;
-    symptoms['lossSmellTaste'] = false;
+    symptoms['Fever'] = false;
+    symptoms['Sore Throat'] = false;
+    symptoms['Diarrhea'] = false;
+    symptoms['Body Aches'] = false;
+    symptoms['Head Aches'] = false;
+    symptoms['Dry Cough'] = false;
+    symptoms['Tiredness/Fatigue'] = false;
+    symptoms['Shortness of Breath'] = false;
+    symptoms['Runny Nose'] = false;
+    symptoms['Loss of Smell/Taste'] = false;
     others['others'] = false;
     symptoms['noneAbove'] = false;
     agree['IAgree'] = false;
@@ -146,11 +147,8 @@ class _HDFformState extends State<HDFform> {
   // Get items and send it to database.
   getItems() async {
     // Validate Temperature
-    validateTemperature(temperatureController.text);
 
-    if (isTemperatureValidate == true) {
-      showInvalidTemp(context, 'invalidChar');
-    } else {
+    if (_homeKey.currentState.validate()) {
       //Change user ID
       if (idEmployee != null) {
         userId = idEmployee;
@@ -287,6 +285,8 @@ class _HDFformState extends State<HDFform> {
       } else {
         showAlertDialog(context);
       }
+    } else {
+      showInvalidTemp(context, 'invalidChar');
     }
   }
 
@@ -322,6 +322,7 @@ class _HDFformState extends State<HDFform> {
     }
 
     print(idEmployee);
+    print(employeeid);
     print(name);
     print(id);
   }
@@ -347,7 +348,7 @@ class _HDFformState extends State<HDFform> {
                             Container(
                               width: 170,
                               child: Text(
-                                'Employee ID: ' + '$userId',
+                                'Employee ID: ' + '$employeeID',
                                 textAlign: TextAlign.left,
                                 style: TextStyle(
                                     fontWeight: FontWeight.w700,
@@ -359,7 +360,7 @@ class _HDFformState extends State<HDFform> {
                             ),
                             Container(
                               width: 170,
-                              margin: const EdgeInsets.only(bottom: 15),
+                              margin: const EdgeInsets.only(bottom: 45),
                               child: Text(
                                 'Name: ' + name,
                                 textAlign: TextAlign.left,
@@ -389,16 +390,27 @@ class _HDFformState extends State<HDFform> {
                             ),
                             SizedBox(
                               width: 130,
-                              height: 50,
+                              height: 72,
                               child: TextFormField(
                                   controller: this.temperatureController,
                                   autocorrect: true,
                                   keyboardType: TextInputType.number,
+                                  maxLengthEnforced: true,
+                                  maxLength: 4,
+                                  inputFormatters: [
+                                    new FilteringTextInputFormatter.deny(
+                                        new RegExp('[\\,|\\-|\\ ]')),
+                                  ],
+                                  validator: (value) {
+                                    if (value.contains(
+                                        new RegExp('[\\,|\\-|\\ ]'))) {
+                                      return 'Please enter valid temperature.';
+                                    }
+                                    return null;
+                                  },
                                   decoration: InputDecoration(
-                                      labelText: 'Temp. Reading',
-                                      errorText: isTemperatureValidate
-                                          ? 'Please enter valid Temperature.'
-                                          : null)),
+                                    labelText: 'Temp. Reading',
+                                  )),
                             ),
                           ],
                         ),
@@ -435,12 +447,12 @@ class _HDFformState extends State<HDFform> {
                     child: Row(
                       children: <Widget>[
                         Checkbox(
-                            value: symptoms['fever'],
+                            value: symptoms['Fever'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['fever'] = value;
+                                  symptoms['Fever'] = value;
                                 });
                               } else {
                                 return null;
@@ -454,12 +466,12 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['soreThroat'],
+                            value: symptoms['Sore Throat'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['soreThroat'] = value;
+                                  symptoms['Sore Throat'] = value;
                                 });
                               } else {
                                 return null;
@@ -473,12 +485,12 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['diarrhea'],
+                            value: symptoms['Diarrhea'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['diarrhea'] = value;
+                                  symptoms['Diarrhea'] = value;
                                 });
                               } else {
                                 return null;
@@ -498,12 +510,12 @@ class _HDFformState extends State<HDFform> {
                     child: Row(
                       children: <Widget>[
                         Checkbox(
-                            value: symptoms['bodyAches'],
+                            value: symptoms['Body Aches'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['bodyAches'] = value;
+                                  symptoms['Body Aches'] = value;
                                 });
                               } else {
                                 return null;
@@ -517,12 +529,12 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['headAches'],
+                            value: symptoms['Head Aches'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['headAches'] = value;
+                                  symptoms['Head Aches'] = value;
                                 });
                               } else {
                                 return null;
@@ -536,12 +548,12 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['dryCough'],
+                            value: symptoms['Dry Cough'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['dryCough'] = value;
+                                  symptoms['Dry Cough'] = value;
                                 });
                               } else {
                                 return null;
@@ -561,12 +573,12 @@ class _HDFformState extends State<HDFform> {
                     child: Row(
                       children: <Widget>[
                         Checkbox(
-                            value: symptoms['shortnessBreath'],
+                            value: symptoms['Shortness of Breath'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['shortnessBreath'] = value;
+                                  symptoms['Shortness of Breath'] = value;
                                 });
                               } else {
                                 return null;
@@ -580,12 +592,12 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['tirednessFatigue'],
+                            value: symptoms['Tiredness/Fatigue'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['tirednessFatigue'] = value;
+                                  symptoms['Tiredness/Fatigue'] = value;
                                 });
                               } else {
                                 return null;
@@ -599,12 +611,12 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['runnyNose'],
+                            value: symptoms['Runny Nose'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['runnyNose'] = value;
+                                  symptoms['Runny Nose'] = value;
                                 });
                               } else {
                                 return null;
@@ -624,12 +636,12 @@ class _HDFformState extends State<HDFform> {
                     child: Row(
                       children: <Widget>[
                         Checkbox(
-                            value: symptoms['lossSmellTaste'],
+                            value: symptoms['Loss of Smell/Taste'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['lossSmellTaste'] = value;
+                                  symptoms['Loss of Smell/Taste'] = value;
                                 });
                               } else {
                                 return null;
@@ -1117,7 +1129,7 @@ showSuccessDialog(BuildContext context, int id) {
   // set up the AlertDialog
   AlertDialog alert = AlertDialog(
     title: Text(
-      "Success",
+      "Uploading, please wait...",
       textAlign: TextAlign.center,
       style: TextStyle(fontSize: 20),
     ),
@@ -1127,15 +1139,16 @@ showSuccessDialog(BuildContext context, int id) {
   // show the dialog
   showDialog(
     context: context,
+    barrierDismissible: false,
     builder: (BuildContext context) {
-      Future.delayed(Duration(seconds: 5), () {
-        Navigator.push(
+      Future.delayed(Duration(seconds: 4), () {
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HDFhome(idname: id)),
+          MaterialPageRoute(builder: (context) => new HDFhome(idname: id)),
         );
       });
 
-      return alert;
+      return WillPopScope(child: alert, onWillPop: null);
     },
   );
 }
