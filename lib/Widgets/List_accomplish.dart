@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:HDF_App/hdf_form.dart';
+import 'package:HDF_App/hdf_preview.dart';
 import 'package:http/http.dart' as http;
 
 class ListAccomplish extends StatefulWidget {
@@ -424,77 +425,99 @@ class _ListAccomplishState extends State<ListAccomplish> {
                             accomplishedList[index].id == 0)
                           return Text('No Data.');
                         else
-                          return Column(
-                            children: [
-                              FittedBox(
-                                fit: BoxFit.contain,
-                                child: Container(
-                                  child: Row(
-                                    children: <Widget>[
-                                      Container(
-                                        width: queryData.size.width * 1 / 4,
-                                        margin: const EdgeInsets.only(
-                                          left: 5,
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              bottom: 8.0, top: 8.0),
-                                          child: Text(
-                                            accomplishedList[index]
-                                                .name
-                                                .toString(),
-                                            textAlign: TextAlign.left,
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w600),
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                      builder: (context) => HDFPreview(
+                                            id: idname, //superior ID
+                                            idEmployee: accomplishedList[index]
+                                                .id, //employee ID
+                                            temperature: accomplishedList[index]
+                                                .temperature, // usersID
+                                            name: accomplishedList[index]
+                                                .name, //name
+                                            position: accomplishedList[index]
+                                                .position, //position
+                                          )),
+                                );
+                              });
+                            },
+                            child: Column(
+                              children: [
+                                FittedBox(
+                                  fit: BoxFit.contain,
+                                  child: Container(
+                                    child: Row(
+                                      children: <Widget>[
+                                        Container(
+                                          width: queryData.size.width * 1 / 4,
+                                          margin: const EdgeInsets.only(
+                                            left: 5,
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 8.0, top: 8.0),
+                                            child: Text(
+                                              accomplishedList[index]
+                                                  .name
+                                                  .toString(),
+                                              textAlign: TextAlign.left,
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      // Container(
-                                      //   width: queryData.size.width * 0.58 / 4,
-                                      //   margin: const EdgeInsets.only(
-                                      //       left: 5, right: 5),
-                                      //   child: Text(
-                                      //       accomplishedList[index]
-                                      //           .id
-                                      //           .toString(),
-                                      //       textAlign: TextAlign.center,
-                                      //       style: TextStyle(
-                                      //           fontWeight: FontWeight.w600)),
-                                      // ),
-                                      Container(
-                                        width: queryData.size.width * 1.1 / 4,
-                                        margin: const EdgeInsets.only(
-                                            left: 5, right: 5),
-                                        child: Text(
-                                            accomplishedList[index]
-                                                .position
-                                                .toString(),
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w600)),
-                                      ),
-                                      Container(
-                                        width: queryData.size.width * 0.75 / 4,
-                                        margin: const EdgeInsets.only(left: 5),
-                                        child: Text(
-                                            accomplishedList[index]
-                                                .temperature
-                                                .toString(),
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w600)),
-                                      ),
-                                    ],
+                                        // Container(
+                                        //   width: queryData.size.width * 0.58 / 4,
+                                        //   margin: const EdgeInsets.only(
+                                        //       left: 5, right: 5),
+                                        //   child: Text(
+                                        //       accomplishedList[index]
+                                        //           .id
+                                        //           .toString(),
+                                        //       textAlign: TextAlign.center,
+                                        //       style: TextStyle(
+                                        //           fontWeight: FontWeight.w600)),
+                                        // ),
+                                        Container(
+                                          width: queryData.size.width * 1.1 / 4,
+                                          margin: const EdgeInsets.only(
+                                              left: 5, right: 5),
+                                          child: Text(
+                                              accomplishedList[index]
+                                                  .position
+                                                  .toString(),
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600)),
+                                        ),
+                                        Container(
+                                          width:
+                                              queryData.size.width * 0.75 / 4,
+                                          margin:
+                                              const EdgeInsets.only(left: 5),
+                                          child: Text(
+                                              accomplishedList[index]
+                                                  .temperature
+                                                  .toString(),
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600)),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              SizedBox(
-                                  width: 360,
-                                  height: 1,
-                                  child: Container(
-                                    color: Colors.black12,
-                                  )),
-                            ],
+                                SizedBox(
+                                    width: 360,
+                                    height: 1,
+                                    child: Container(
+                                      color: Colors.black12,
+                                    )),
+                              ],
+                            ),
                           );
                       }),
                     ),

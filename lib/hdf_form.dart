@@ -1133,7 +1133,13 @@ showSuccessDialog(BuildContext context, int id) {
       textAlign: TextAlign.center,
       style: TextStyle(fontSize: 20),
     ),
-    content: Image(image: AssetImage('asset/img/success.gif')),
+    content: SizedBox(
+      width: 10,
+      child: Image(
+        image: AssetImage('asset/img/loading.gif'),
+        width: 10,
+      ),
+    ),
   );
 
   // show the dialog

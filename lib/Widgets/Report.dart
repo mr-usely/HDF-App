@@ -361,7 +361,7 @@ class _ReportsState extends State<Reports> {
                                 child: Row(
                                   children: <Widget>[
                                     Container(
-                                      width: queryData.size.width * 0.70 / 5,
+                                      width: queryData.size.width * 0.80 / 5,
                                       padding: const EdgeInsets.only(right: 5),
                                       child: Text(
                                           summaryList[index]
@@ -372,7 +372,7 @@ class _ReportsState extends State<Reports> {
                                               fontWeight: FontWeight.w600)),
                                     ),
                                     Container(
-                                      width: queryData.size.width * 0.55 / 5,
+                                      width: queryData.size.width * 1 / 5,
                                       padding: const EdgeInsets.only(
                                           left: 5, right: 5),
                                       child: Text(
@@ -382,7 +382,7 @@ class _ReportsState extends State<Reports> {
                                               fontWeight: FontWeight.w600)),
                                     ),
                                     Container(
-                                      width: queryData.size.width * 1.45 / 5,
+                                      width: queryData.size.width * 0.95 / 5,
                                       padding: const EdgeInsets.only(
                                           left: 5, right: 5),
                                       child: Text(
@@ -394,7 +394,7 @@ class _ReportsState extends State<Reports> {
                                               fontWeight: FontWeight.w600)),
                                     ),
                                     Container(
-                                      width: queryData.size.width * 1.10 / 5,
+                                      width: queryData.size.width * 1.1 / 5,
                                       padding: const EdgeInsets.only(
                                           left: 5, right: 5),
                                       child: Text(
@@ -406,7 +406,7 @@ class _ReportsState extends State<Reports> {
                                               fontWeight: FontWeight.w600)),
                                     ),
                                     Container(
-                                      width: queryData.size.width * 0.55 / 5,
+                                      width: queryData.size.width * 0.50 / 5,
                                       padding: const EdgeInsets.only(
                                         left: 5,
                                       ),
@@ -669,7 +669,8 @@ class _ReportsState extends State<Reports> {
                 )),
             // Tabe Data
             Container(
-              padding: const EdgeInsets.only(left: 15, right: 15, bottom: 20),
+              padding: const EdgeInsets.only(
+                  left: 15, right: 15, top: 10, bottom: 20),
               child: loading
                   ? Center(child: CircularProgressIndicator())
                   : Column(
