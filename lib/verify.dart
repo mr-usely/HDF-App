@@ -1,80 +1,181 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'package:ota_update/ota_update.dart';
+import 'package:platform/platform.dart';
+import 'package:ext_storage/ext_storage.dart';
+import 'package:install_plugin/install_plugin.dart';
 
-Future<Album> fetchAlbum() async {
-  final response =
-      await http.get('https://jsonplaceholder.typicode.com/albums/1');
-
-  if (response.statusCode == 200) {
-    // If the server did return a 200 OK response,
-    // then parse the JSON.
-    return Album.fromJson(json.decode(response.body));
-  } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
-    throw Exception('Failed to load album');
-  }
-}
-
-class Album {
-  final int userId;
-  final int id;
-  final String title;
-
-  Album({this.userId, this.id, this.title});
-
-  factory Album.fromJson(Map<String, dynamic> json) {
-    return Album(
-      userId: json['userId'],
-      id: json['id'],
-      title: json['title'],
-    );
-  }
-}
-
-class MyTestApp extends StatefulWidget {
-  MyTestApp({Key key}) : super(key: key);
-
+class DailyReport extends StatefulWidget {
+  final String appName;
+  DailyReport({Key key, @required this.appName}) : super(key: key);
   @override
-  _MyAppState createState() => _MyAppState();
+  _DailyReportState createState() => _DailyReportState(appName);
 }
 
-class _MyAppState extends State<MyTestApp> {
-  Future<Album> futureAlbum;
+class _DailyReportState extends State<DailyReport> {
+  String appName;
+  _DailyReportState(this.appName);
+  OtaEvent currentEvent;
 
   @override
   void initState() {
     super.initState();
-    futureAlbum = fetchAlbum();
+    tryOtaUpdate();
+  }
+
+  Future<void> tryOtaUpdate() async {
+    try {
+      OtaUpdate()
+          .execute(
+        'http://203.177.199.130:8012/HDF_app/app_updates/$appName',
+        destinationFilename: '$appName',
+        //FOR NOW ANDROID ONLY - ABILITY TO VALIDATE CHECKSUM OF FILE:
+        sha256checksum:
+            "d6da28451a1e15cf7a75f2c3f151befad3b80ad0bb232ab15c20897e54f21478",
+      )
+          .listen(
+        (OtaEvent event) {
+          setState(() => currentEvent = event);
+        },
+      );
+    } catch (e) {
+      print('Failed to make OTA update. Details: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  initInstall() async {
+    var path = await ExtStorage.getExternalStoragePublicDirectory(
+        ExtStorage.DIRECTORY_DOWNLOADS);
+    if (const LocalPlatform().isAndroid) {
+      InstallPlugin.installApk(path + '/$appName', 'com.example.HDF_App')
+          .then((result) {
+        print('install apk $result');
+      }).catchError((error) {
+        print('install apk error: $error');
+      });
+    }
+    print('installing...');
+  }
+
+  conditioner() {
+    try {
+      var val = int.parse(currentEvent.value);
+      double progress;
+      if (currentEvent.value == 'Checksum verification failed')
+        progress = 1.0;
+      else
+        progress = val * 0.01;
+      return progress;
+    } on FormatException catch (_) {
+      initInstall();
+      double progress = 1.0;
+      return progress;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Fetch Data Example',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('Fetch Data Example'),
+    if (currentEvent == null) {
+      return Container(
+        decoration: BoxDecoration(
+            color: Colors.white,
+            image: DecorationImage(
+                image: AssetImage("asset/img/bg.png"), fit: BoxFit.cover)),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image(
+                image: AssetImage('asset/img/HDF-logo.png'),
+                width: 120,
+              )
+            ],
+          ),
         ),
-        body: Center(
-          child: FutureBuilder<Album>(
-            future: futureAlbum,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return Text(snapshot.data.title);
-              } else if (snapshot.hasError) {
-                return Text("${snapshot.error}");
-              }
-
-              // By default, show a loading spinner.
-              return CircularProgressIndicator();
-            },
+      );
+    }
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: WillPopScope(
+          child: Container(
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                    image: AssetImage("asset/img/bg.png"), fit: BoxFit.cover)),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image(
+                    image: AssetImage('asset/img/HDF-logo.png'),
+                    width: 120,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'ULPI Health Declaration',
+                      style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    width: 243,
+                    child: LinearProgressIndicator(
+                      value: conditioner(),
+                      backgroundColor: Color.fromARGB(100, 16, 204, 169),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          Color.fromARGB(220, 16, 204, 169)),
+                    ),
+                  ),
+                  if (currentEvent.status.toString() !=
+                      'OtaStatus.CHECKSUM_ERROR')
+                    Container(
+                      margin: const EdgeInsets.only(top: 5),
+                      child: Text(
+                        'Downloading Update... ${currentEvent.value}%',
+                        style: TextStyle(
+                            color: Colors.grey, fontFamily: 'Open Sans'),
+                      ),
+                    )
+                  else
+                    Container(
+                      margin: const EdgeInsets.only(top: 5),
+                      child: Text(
+                        'Installing...',
+                        style: TextStyle(
+                            color: Colors.grey, fontFamily: 'Open Sans'),
+                      ),
+                    )
+                ],
+              ),
+            ),
+          ),
+          onWillPop: () => showDialog<bool>(
+            context: context,
+            builder: (c) => AlertDialog(
+              title: Text('Warning'),
+              content: Text('Do you really want to exit?'),
+              actions: [
+                FlatButton(
+                  child: Text('Yes'),
+                  onPressed: () {
+                    SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                  },
+                ),
+                FlatButton(
+                  child: Text('No'),
+                  onPressed: () => Navigator.pop(c, false),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:HDF_App/hdf_preview.dart';
 
 class Reports extends StatefulWidget {
   final int idname;
@@ -14,19 +16,29 @@ MediaQueryData queryData;
 class HighTempList {
   String name;
   int id;
+  int employeeID;
   String position;
   String temperature;
 
-  HighTempList({this.id, this.name, this.position, this.temperature});
+  HighTempList(
+      {this.id, this.employeeID, this.name, this.position, this.temperature});
 }
 
 class SymptomsList {
   String name;
   int id;
+  int employeeID;
+  String temperature;
   String position;
   String symptoms;
 
-  SymptomsList({this.id, this.name, this.position, this.symptoms});
+  SymptomsList(
+      {this.id,
+      this.employeeID,
+      this.temperature,
+      this.name,
+      this.position,
+      this.symptoms});
 }
 
 class SummaryList {
@@ -44,6 +56,13 @@ class SummaryList {
       this.percentage});
 }
 
+class ListItem {
+  int value;
+  String name;
+
+  ListItem(this.value, this.name);
+}
+
 class _ReportsState extends State<Reports> {
   int idname;
   _ReportsState(this.idname);
@@ -51,12 +70,64 @@ class _ReportsState extends State<Reports> {
   List<SummaryList> summaryList = [];
   List<HighTempList> highTempList = [];
   List<SymptomsList> symptomsList = [];
+  List<ListItem> _dropdownItems = [ListItem(0, "All")];
   var loading = true;
+  List<DropdownMenuItem<ListItem>> _dropdownMenuItems;
+  ListItem _selectedItem;
+
+  //gettig the departments
+  //getting the Not Completed Data
+  Future<List> getDeptData(int id) async {
+    String urlApi =
+        "http://203.177.199.130:8012/HDF_app/index.php?department=" + '$id';
+    http.Response response = await http.get(urlApi);
+    if (json.decode(response.body) != null) {
+      return json.decode(response.body);
+    } else {
+      return null;
+    }
+  }
+
+  fetchDeptdata(int id) async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        if (getDeptData(id) != null) {
+          List _jsonValue = await getDeptData(id);
+
+          if (_jsonValue != null) {
+            setState(() {
+              for (var i = 0; i < _jsonValue.length; i++) {
+                _dropdownItems.add(ListItem(_jsonValue[i]['value'],
+                    _jsonValue[i]['department'].toString()));
+              }
+
+              // put it into the list of dropdowns.
+              _dropdownMenuItems = buildDropDownMenuItems(_dropdownItems);
+              _selectedItem = _dropdownMenuItems[0].value;
+              print(_dropdownItems[1].value.toString() +
+                  ' : ' +
+                  _dropdownItems[1].name);
+              loading = false;
+            });
+          } else {
+            _dropdownItems.add(ListItem(1, "empty"));
+            loading = false;
+          }
+        } else {
+          _dropdownItems.add(ListItem(1, "empty"));
+          loading = false;
+        }
+      }
+    } on SocketException catch (_) {
+      showAlertDialog(context);
+    }
+  }
 
   //getting the Summary List
-  Future<List> getJsonData() async {
+  Future<List> getJsonData(String dept) async {
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?Summary=" + '$idname';
+        "http://203.177.199.130:8012/HDF_app/index.php?Summary=$idname&dept=$dept";
     http.Response response = await http.get(urlApi);
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
@@ -66,9 +137,9 @@ class _ReportsState extends State<Reports> {
   }
 
   //getting the High Temperature List
-  Future<List> getJsonData2() async {
+  Future<List> getJsonData2(String dept) async {
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?HighTemp=" + '$idname';
+        "http://203.177.199.130:8012/HDF_app/index.php?HighTemp=$idname&dept=$dept";
     http.Response response = await http.get(urlApi);
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
@@ -78,9 +149,9 @@ class _ReportsState extends State<Reports> {
   }
 
   //getting the Symptoms List
-  Future<List> getJsonData3() async {
+  Future<List> getJsonData3(String dept) async {
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?Symptoms=" + '$idname';
+        "http://203.177.199.130:8012/HDF_app/index.php?Symptoms=$idname&dept=$dept";
     http.Response response = await http.get(urlApi);
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
@@ -89,86 +160,170 @@ class _ReportsState extends State<Reports> {
     }
   }
 
-  // fetch high temp data from the server
-  fetchdata() async {
-    if (getJsonData() != null) {
-      List _jsonValue = await getJsonData();
+  // fetch Summary data from the server
+  fetchdata(String dept) async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        if (getJsonData(dept) != null) {
+          List _jsonValue = await getJsonData(dept);
 
-      if (_jsonValue != null) {
-        setState(() {
-          for (var i = 0; i < _jsonValue.length; i++) {
-            summaryList.add(SummaryList(
-                superior: _jsonValue[i]['superior'],
-                total: _jsonValue[i]['total'],
-                notyetAcc: _jsonValue[i]['notyetAcc'],
-                accomplished: _jsonValue[i]['accomplished'],
-                percentage: _jsonValue[i]['percentage']));
+          if (_jsonValue != null) {
+            setState(() {
+              for (var i = 0; i < _jsonValue.length; i++) {
+                summaryList.add(SummaryList(
+                    superior: _jsonValue[i]['superior'],
+                    total: int.parse(_jsonValue[i]['total']),
+                    notyetAcc: _jsonValue[i]['notyetAcc'],
+                    accomplished: int.parse(_jsonValue[i]['accomplished']),
+                    percentage: _jsonValue[i]['percentage']));
+              }
+              print(summaryList[0].superior);
+              loading = false;
+            });
+          } else {
+            summaryList.add(SummaryList(superior: "empty", total: 0));
+            loading = false;
           }
-          print(summaryList[0].superior);
+        } else {
+          summaryList.add(SummaryList(superior: "empty", total: 0));
           loading = false;
-        });
-      } else {
-        summaryList.add(SummaryList(superior: "empty", total: 0));
-        loading = false;
+        }
       }
-    } else {
-      summaryList.add(SummaryList(superior: "empty", total: 0));
-      loading = false;
+    } on SocketException catch (_) {
+      showAlertDialog(context);
     }
   }
 
   // fetch high temp data from the server
-  fetchdata2() async {
-    if (getJsonData2() != null) {
-      List _jsonValue2 = await getJsonData2();
+  fetchdata2(String dept) async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        if (getJsonData2(dept) != null) {
+          List _jsonValue2 = await getJsonData2(dept);
 
-      if (_jsonValue2 != null) {
-        setState(() {
-          for (var i = 0; i < _jsonValue2.length; i++) {
-            highTempList.add(HighTempList(
-                name: _jsonValue2[i]['name'],
-                id: _jsonValue2[i]['id'],
-                position: _jsonValue2[i]['position'],
-                temperature: _jsonValue2[i]['temperature']));
+          if (_jsonValue2 != null) {
+            setState(() {
+              for (var i = 0; i < _jsonValue2.length; i++) {
+                highTempList.add(HighTempList(
+                    name: _jsonValue2[i]['name'],
+                    id: _jsonValue2[i]['id'],
+                    employeeID: _jsonValue2[i]['employeeID'],
+                    position: _jsonValue2[i]['position'],
+                    temperature: _jsonValue2[i]['temperature']));
+              }
+              print(highTempList[0].name);
+              hightempNum(highTempList.length);
+              loading = false;
+            });
+          } else {
+            highTempList.add(HighTempList(name: "empty", id: 0));
+            loading = false;
           }
-          print(highTempList[0].name);
+        } else {
+          highTempList.add(HighTempList(name: "empty", id: 0));
           loading = false;
-        });
-      } else {
-        highTempList.add(HighTempList(name: "empty", id: 0));
-        loading = false;
+        }
       }
-    } else {
-      highTempList.add(HighTempList(name: "empty", id: 0));
-      loading = false;
+    } on SocketException catch (_) {
+      showAlertDialog(context);
     }
   }
 
-  // fetch high temp data from the server
-  fetchdata3() async {
-    if (getJsonData3() != null) {
-      List _jsonValue3 = await getJsonData3();
+  // fetch symptoms data from the server
+  fetchdata3(String dept) async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        if (getJsonData3(dept) != null) {
+          List _jsonValue3 = await getJsonData3(dept);
 
-      if (_jsonValue3 != null) {
-        setState(() {
-          for (var i = 0; i < _jsonValue3.length; i++) {
-            symptomsList.add(SymptomsList(
-                name: _jsonValue3[i]['name'],
-                id: _jsonValue3[i]['id'],
-                position: _jsonValue3[i]['position'],
-                symptoms: _jsonValue3[i]['symptoms']));
+          if (_jsonValue3 != null) {
+            setState(() {
+              for (var i = 0; i < _jsonValue3.length; i++) {
+                symptomsList.add(SymptomsList(
+                    name: _jsonValue3[i]['name'],
+                    id: _jsonValue3[i]['id'],
+                    employeeID: _jsonValue3[i]['employeeID'],
+                    temperature: _jsonValue3[i]['temperature'],
+                    position: _jsonValue3[i]['position'],
+                    symptoms: _jsonValue3[i]['symptoms']));
+              }
+              print(symptomsList[0].name);
+              symptomsNum(symptomsList.length);
+              loading = false;
+            });
+          } else {
+            symptomsList.add(SymptomsList(name: "empty", id: 0));
+            loading = false;
           }
-          print(symptomsList[0].name);
+        } else {
+          symptomsList.add(SymptomsList(name: "empty", id: 0));
           loading = false;
-        });
-      } else {
-        symptomsList.add(SymptomsList(name: "empty", id: 0));
-        loading = false;
+        }
       }
-    } else {
-      symptomsList.add(SymptomsList(name: "empty", id: 0));
-      loading = false;
+    } on SocketException catch (_) {
+      showAlertDialog(context);
     }
+  }
+
+  hightempNum(int number) {
+    if (number != 0 && number != 1)
+      return Container(
+        width: 50,
+        height: 30,
+        alignment: Alignment.topRight,
+        margin: EdgeInsets.only(top: 5, left: 75),
+        child: Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color.fromRGBO(16, 204, 169, 1),
+              border: Border.all(color: Colors.white, width: 1)),
+          child: Padding(
+            padding: const EdgeInsets.all(1.0),
+            child: Center(
+              child: Text(
+                number.toString(),
+                style: TextStyle(fontSize: 10, color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      );
+    else
+      return Container();
+  }
+
+  symptomsNum(int number) {
+    if (number != 0 && number != 1)
+      return Container(
+        width: 60,
+        height: 30,
+        alignment: Alignment.topRight,
+        margin: EdgeInsets.only(top: 5, left: 50),
+        child: Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color.fromRGBO(16, 204, 169, 1),
+              border: Border.all(color: Colors.white, width: 1)),
+          child: Padding(
+            padding: const EdgeInsets.all(1.0),
+            child: Center(
+              child: Text(
+                number.toString(),
+                style: TextStyle(fontSize: 10, color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      );
+    else
+      return Container();
   }
 
   fontChange() {
@@ -243,28 +398,56 @@ class _ReportsState extends State<Reports> {
     }
   }
 
+  bool style = true;
+  bool style1 = false;
+  bool style2 = false;
   @override
   void initState() {
     super.initState();
-    fetchdata();
-    fetchdata2();
-    fetchdata3();
+    fetchDeptdata(idname);
+    fetchdata('All');
+    fetchdata2('All');
+    fetchdata3('All');
+  }
+
+  List<DropdownMenuItem<ListItem>> buildDropDownMenuItems(List listItems) {
+    List<DropdownMenuItem<ListItem>> items = List();
+    for (ListItem listItem in listItems) {
+      items.add(
+        DropdownMenuItem(
+          child: Text(
+            listItem.name,
+            style: TextStyle(fontSize: 12, fontFamily: 'Open Sans'),
+          ),
+          value: listItem,
+        ),
+      );
+    }
+    return items;
   }
 
   @override
   Widget build(BuildContext context) {
     queryData = MediaQuery.of(context);
     var summary = Container(
-        color: Color.fromRGBO(245, 244, 244, 1),
+        margin: const EdgeInsets.only(top: 66),
+        decoration: BoxDecoration(
+          color: Color.fromRGBO(245, 244, 244, 1),
+          border: Border(
+              top: BorderSide(
+                  width: 2,
+                  style: BorderStyle.solid,
+                  color: Color.fromRGBO(16, 204, 169, 1))),
+        ),
         child: Column(
           children: <Widget>[
-            SizedBox(
-                height: 2,
-                width: 395,
-                child: Container(
-                  margin: const EdgeInsets.only(left: 100),
-                  color: Color.fromRGBO(16, 204, 169, 1),
-                )),
+            // SizedBox(
+            //     height: 2,
+            //     width: queryData.size.width / 100 * 100,
+            //     child: Container(
+            //       margin: const EdgeInsets.only(left: 100),
+            //       color: Color.fromRGBO(16, 204, 169, 1),
+            //     )),
             // Table header
             Container(
               margin:
@@ -273,9 +456,9 @@ class _ReportsState extends State<Reports> {
                 fit: BoxFit.contain,
                 child: new Row(children: <Widget>[
                   Container(
-                    width: queryData.size.width * 1 / 5,
+                    width: queryData.size.width * 0.65 / 5,
                     margin: const EdgeInsets.only(right: 5),
-                    child: Text('Department',
+                    child: Text('Dept',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontWeight: FontWeight.w800)),
                   ),
@@ -285,22 +468,9 @@ class _ReportsState extends State<Reports> {
                     child: Container(color: Colors.black12),
                   ),
                   Container(
-                    width: queryData.size.width * 0.70 / 5,
+                    width: queryData.size.width * 0.80 / 5,
                     margin: const EdgeInsets.only(left: 5, right: 5),
-                    child: Text('Total Personel',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w800)),
-                  ),
-                  SizedBox(
-                    width: 1,
-                    height: 20,
-                    child: Container(color: Colors.black12),
-                  ),
-                  Container(
-                    width: queryData.size.width * 0.95 / 5,
-                    margin: const EdgeInsets.only(left: 5, right: 5),
-                    child: Text('Not Yet Accomplish',
+                    child: Text('Total Personnel',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontSize: 12, fontWeight: FontWeight.w800)),
@@ -313,7 +483,20 @@ class _ReportsState extends State<Reports> {
                   Container(
                     width: queryData.size.width * 1 / 5,
                     margin: const EdgeInsets.only(left: 5, right: 5),
-                    child: Text('Accomplished of the Day',
+                    child: Text('Not Accomplish',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w800)),
+                  ),
+                  SizedBox(
+                    width: 1,
+                    height: 20,
+                    child: Container(color: Colors.black12),
+                  ),
+                  Container(
+                    width: queryData.size.width * 1.1 / 5,
+                    margin: const EdgeInsets.only(left: 5, right: 5),
+                    child: Text('Accomplished',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontSize: 12, fontWeight: FontWeight.w800)),
@@ -372,7 +555,7 @@ class _ReportsState extends State<Reports> {
                                               fontWeight: FontWeight.w600)),
                                     ),
                                     Container(
-                                      width: queryData.size.width * 1 / 5,
+                                      width: queryData.size.width * 0.5 / 5,
                                       padding: const EdgeInsets.only(
                                           left: 5, right: 5),
                                       child: Text(
@@ -382,7 +565,7 @@ class _ReportsState extends State<Reports> {
                                               fontWeight: FontWeight.w600)),
                                     ),
                                     Container(
-                                      width: queryData.size.width * 0.95 / 5,
+                                      width: queryData.size.width * 1.4 / 5,
                                       padding: const EdgeInsets.only(
                                           left: 5, right: 5),
                                       child: Text(
@@ -394,7 +577,7 @@ class _ReportsState extends State<Reports> {
                                               fontWeight: FontWeight.w600)),
                                     ),
                                     Container(
-                                      width: queryData.size.width * 1.1 / 5,
+                                      width: queryData.size.width * 1 / 5,
                                       padding: const EdgeInsets.only(
                                           left: 5, right: 5),
                                       child: Text(
@@ -406,7 +589,7 @@ class _ReportsState extends State<Reports> {
                                               fontWeight: FontWeight.w600)),
                                     ),
                                     Container(
-                                      width: queryData.size.width * 0.50 / 5,
+                                      width: queryData.size.width * 0.60 / 5,
                                       padding: const EdgeInsets.only(
                                         left: 5,
                                       ),
@@ -435,25 +618,16 @@ class _ReportsState extends State<Reports> {
           ],
         ));
     var highTemperature = Container(
-        color: Color.fromRGBO(245, 244, 244, 1),
+        margin: const EdgeInsets.only(top: 66),
+        decoration: BoxDecoration(
+            color: Color.fromRGBO(245, 244, 244, 1),
+            border: Border(
+                top: BorderSide(
+                    width: 2,
+                    style: BorderStyle.solid,
+                    color: Color.fromRGBO(16, 204, 169, 1)))),
         child: Column(
           children: <Widget>[
-            SizedBox(
-                child: Row(
-              children: <Widget>[
-                Container(
-                  margin: const EdgeInsets.only(right: 145),
-                  width: 105,
-                  height: 2,
-                  color: Color.fromRGBO(16, 204, 169, 1),
-                ),
-                Container(
-                  width: 121,
-                  height: 2,
-                  color: Color.fromRGBO(16, 204, 169, 1),
-                )
-              ],
-            )),
             // Table header
             Container(
               margin: const EdgeInsets.only(
@@ -522,95 +696,107 @@ class _ReportsState extends State<Reports> {
                           highTempList[index].id == 0)
                         return Text('No Data.');
                       else
-                        return Column(
-                          children: [
-                            FittedBox(
-                              fit: BoxFit.contain,
-                              child: Container(
-                                margin:
-                                    const EdgeInsets.only(bottom: 10, top: 10),
-                                child: Row(
-                                  children: <Widget>[
-                                    Container(
-                                      width: queryData.size.width * 0.80 / 3,
-                                      margin: const EdgeInsets.only(
-                                          left: 5, right: 5),
-                                      child: Text(
-                                          highTempList[index].name.toString(),
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600)),
-                                    ),
-                                    // Container(
-                                    //   width: queryData.size.width * 0.90 / 4,
-                                    //   margin: const EdgeInsets.only(
-                                    //       left: 5, right: 5),
-                                    //   child: Text(
-                                    //       highTempList[index].id.toString(),
-                                    //       textAlign: TextAlign.center,
-                                    //       style: TextStyle(
-                                    //           fontWeight: FontWeight.w600)),
-                                    // ),
-                                    Container(
-                                      width: queryData.size.width * 0.80 / 3,
-                                      margin: const EdgeInsets.only(
-                                          left: 5, right: 5),
-                                      child: Text(
-                                          highTempList[index]
-                                              .position
-                                              .toString(),
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600)),
-                                    ),
-                                    Container(
-                                      width: queryData.size.width * 0.80 / 3,
-                                      padding: const EdgeInsets.only(
-                                          left: 5, right: 5),
-                                      child: Text(
-                                          highTempList[index]
-                                              .temperature
-                                              .toString(),
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600)),
-                                    ),
-                                  ],
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                    builder: (context) => HDFPreview(
+                                          superiorID: idname,
+                                          id: highTempList[index]
+                                              .id, //superior ID
+                                          idEmployee: highTempList[index]
+                                              .employeeID, //employee ID
+                                          temperature: highTempList[index]
+                                              .temperature, // usersID
+                                          name: highTempList[index].name, //name
+                                          position: highTempList[index]
+                                              .position, //position
+                                        )),
+                              );
+                            });
+                          },
+                          child: Column(
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.contain,
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                      bottom: 10, top: 10),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Container(
+                                        width: queryData.size.width * 0.80 / 3,
+                                        margin: const EdgeInsets.only(
+                                            left: 5, right: 5),
+                                        child: Text(
+                                            highTempList[index].name.toString(),
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600)),
+                                      ),
+                                      // Container(
+                                      //   width: queryData.size.width * 0.90 / 4,
+                                      //   margin: const EdgeInsets.only(
+                                      //       left: 5, right: 5),
+                                      //   child: Text(
+                                      //       highTempList[index].id.toString(),
+                                      //       textAlign: TextAlign.center,
+                                      //       style: TextStyle(
+                                      //           fontWeight: FontWeight.w600)),
+                                      // ),
+                                      Container(
+                                        width: queryData.size.width * 0.80 / 3,
+                                        margin: const EdgeInsets.only(
+                                            left: 5, right: 5),
+                                        child: Text(
+                                            highTempList[index]
+                                                .position
+                                                .toString(),
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600)),
+                                      ),
+                                      Container(
+                                        width: queryData.size.width * 0.80 / 3,
+                                        padding: const EdgeInsets.only(
+                                            left: 5, right: 5),
+                                        child: Text(
+                                            highTempList[index]
+                                                .temperature
+                                                .toString(),
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600)),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                            SizedBox(
-                                width: 360,
-                                height: 1,
-                                child: Container(
-                                  color: Colors.black12,
-                                )),
-                          ],
+                              SizedBox(
+                                  width: 360,
+                                  height: 1,
+                                  child: Container(
+                                    color: Colors.black12,
+                                  )),
+                            ],
+                          ),
                         );
                     })),
             )
           ],
         ));
     var symptoms = Container(
-        color: Color.fromRGBO(245, 244, 244, 1),
+        margin: const EdgeInsets.only(top: 66),
+        decoration: BoxDecoration(
+            color: Color.fromRGBO(245, 244, 244, 1),
+            border: Border(
+                top: BorderSide(
+                    width: 2,
+                    style: BorderStyle.solid,
+                    color: Color.fromRGBO(16, 204, 169, 1)))),
         child: Column(
           children: <Widget>[
-            SizedBox(
-                child: Row(
-              children: <Widget>[
-                Container(
-                  margin: const EdgeInsets.only(right: 98),
-                  width: 248,
-                  height: 2,
-                  color: Color.fromRGBO(16, 204, 169, 1),
-                ),
-                Container(
-                  width: 26,
-                  height: 2,
-                  color: Color.fromRGBO(16, 204, 169, 1),
-                )
-              ],
-            )),
             // Table header
             Container(
               margin: const EdgeInsets.only(
@@ -679,70 +865,91 @@ class _ReportsState extends State<Reports> {
                           symptomsList[index].id == 0)
                         return Text('No Data.');
                       else
-                        return Column(
-                          children: [
-                            FittedBox(
-                              fit: BoxFit.contain,
-                              child: Container(
-                                margin:
-                                    const EdgeInsets.only(bottom: 10, top: 10),
-                                child: Row(
-                                  children: <Widget>[
-                                    Container(
-                                      width: queryData.size.width * 0.80 / 3,
-                                      margin: const EdgeInsets.only(
-                                          left: 5, right: 5),
-                                      child: Text(
-                                          symptomsList[index].name.toString(),
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600)),
-                                    ),
-                                    // Container(
-                                    //   width: queryData.size.width * 0.80 / 4,
-                                    //   margin: const EdgeInsets.only(
-                                    //       left: 5, right: 5),
-                                    //   child: Text(
-                                    //       symptomsList[index].id.toString(),
-                                    //       textAlign: TextAlign.center,
-                                    //       style: TextStyle(
-                                    //           fontWeight: FontWeight.w600)),
-                                    // ),
-                                    Container(
-                                      width: queryData.size.width * 0.80 / 3,
-                                      margin: const EdgeInsets.only(
-                                          left: 5, right: 5),
-                                      child: Text(
-                                          symptomsList[index]
-                                              .position
-                                              .toString(),
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600)),
-                                    ),
-                                    Container(
-                                      width: queryData.size.width * 0.80 / 3,
-                                      padding: const EdgeInsets.only(
-                                          left: 5, right: 5),
-                                      child: Text(
-                                          symptomsList[index]
-                                              .symptoms
-                                              .toString(),
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.w600)),
-                                    ),
-                                  ],
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                    builder: (context) => HDFPreview(
+                                          superiorID: idname,
+                                          id: symptomsList[index]
+                                              .id, //superior ID
+                                          idEmployee: symptomsList[index]
+                                              .employeeID, //employee ID
+                                          temperature: symptomsList[index]
+                                              .temperature, // usersID
+                                          name: symptomsList[index].name, //name
+                                          position: symptomsList[index]
+                                              .position, //position
+                                        )),
+                              );
+                            });
+                          },
+                          child: Column(
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.contain,
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                      bottom: 10, top: 10),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Container(
+                                        width: queryData.size.width * 0.80 / 3,
+                                        margin: const EdgeInsets.only(
+                                            left: 5, right: 5),
+                                        child: Text(
+                                            symptomsList[index].name.toString(),
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600)),
+                                      ),
+                                      // Container(
+                                      //   width: queryData.size.width * 0.80 / 4,
+                                      //   margin: const EdgeInsets.only(
+                                      //       left: 5, right: 5),
+                                      //   child: Text(
+                                      //       symptomsList[index].id.toString(),
+                                      //       textAlign: TextAlign.center,
+                                      //       style: TextStyle(
+                                      //           fontWeight: FontWeight.w600)),
+                                      // ),
+                                      Container(
+                                        width: queryData.size.width * 0.80 / 3,
+                                        margin: const EdgeInsets.only(
+                                            left: 5, right: 5),
+                                        child: Text(
+                                            symptomsList[index]
+                                                .position
+                                                .toString(),
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600)),
+                                      ),
+                                      Container(
+                                        width: queryData.size.width * 0.80 / 3,
+                                        padding: const EdgeInsets.only(
+                                            left: 5, right: 5),
+                                        child: Text(
+                                            symptomsList[index]
+                                                .symptoms
+                                                .toString(),
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600)),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                            SizedBox(
-                                width: 360,
-                                height: 1,
-                                child: Container(
-                                  color: Colors.black12,
-                                )),
-                          ],
+                              SizedBox(
+                                  width: 360,
+                                  height: 1,
+                                  child: Container(
+                                    color: Colors.black12,
+                                  )),
+                            ],
+                          ),
                         );
                     })),
             )
@@ -765,125 +972,206 @@ class _ReportsState extends State<Reports> {
           ]),
         ),
         Container(
-            margin: const EdgeInsets.only(top: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: <Widget>[
-                Container(
-                    height: 50,
-                    width: 100,
-                    decoration: BoxDecoration(
-                      borderRadius:
-                          BorderRadius.only(topRight: Radius.circular(10)),
-                      boxShadow: [
-                        BoxShadow(
+          alignment: Alignment.centerRight,
+          width: 95,
+          margin: const EdgeInsets.only(left: 210, bottom: 5),
+          child: DropdownButton<ListItem>(
+              value: _selectedItem,
+              items: _dropdownMenuItems,
+              isExpanded: true,
+              underline: SizedBox(),
+              icon: Icon(Icons.filter_alt_outlined),
+              onChanged: (value) {
+                setState(() {
+                  _selectedItem = value;
+                  setState(() {
+                    summaryList = [];
+                    symptomsList = [];
+                    highTempList = [];
+                    fetchdata(_selectedItem.name);
+                    fetchdata2(_selectedItem.name);
+                    fetchdata3(_selectedItem.name);
+                  });
+                });
+              }),
+        ),
+        Stack(children: [
+          if (tabs == 0)
+            summary
+          else if (tabs == 1)
+            highTemperature
+          else if (tabs == 2)
+            symptoms,
+          Container(
+              margin: const EdgeInsets.only(top: 10),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                        height: style ? 50 : 47,
+                        width: 100,
+                        margin: style
+                            ? const EdgeInsets.only()
+                            : const EdgeInsets.only(bottom: 1),
+                        decoration: BoxDecoration(
                           color: borderChange(),
-                          spreadRadius: 1,
-                          offset: Offset(2, -1.2),
-                        )
-                      ],
-                    ),
-                    child: FlatButton(
-                        onPressed: () {
-                          setState(() {
-                            tabs = 0;
-                          });
-                        },
-                        color: colorChange(),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(10.0)),
+                          borderRadius:
+                              BorderRadius.only(topRight: Radius.circular(10)),
                         ),
-                        child: Text(
-                          'Summary',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontWeight: fontChange(),
-                              fontFamily: 'Open Sans',
-                              fontSize: 12,
-                              color: Colors.black),
-                        ))),
-                Container(
-                    height: 50,
-                    margin: const EdgeInsets.only(left: 5),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(10),
-                          topLeft: Radius.circular(10)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: borderChange1(),
-                          spreadRadius: 2,
-                          offset: Offset(0, -0.5),
-                        )
-                      ],
-                    ),
-                    child: FlatButton(
-                        onPressed: () {
-                          setState(() {
-                            tabs = 1;
-                          });
-                        },
-                        color: colorChange1(),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(10.0),
-                              topLeft: Radius.circular(10.0)),
-                        ),
-                        child: Text(
-                          'High Temperature',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontWeight: fontChange1(),
-                              fontFamily: 'Open Sans',
-                              fontSize: 12,
-                              color: Colors.black),
-                        ))),
-                Container(
-                    height: 50,
-                    margin: const EdgeInsets.only(left: 5, right: 5),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(10),
-                          topLeft: Radius.circular(10)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: borderChange2(),
-                          spreadRadius: 2,
-                          offset: Offset(0, -0.5),
-                        )
-                      ],
-                    ),
-                    child: FlatButton(
-                        onPressed: () {
-                          setState(() {
-                            tabs = 2;
-                          });
-                        },
-                        color: colorChange2(),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(10.0),
-                              topLeft: Radius.circular(10.0)),
-                        ),
-                        child: Text(
-                          'Symptoms',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontWeight: fontChange2(),
-                              fontFamily: 'Open Sans',
-                              fontSize: 12,
-                              color: Colors.black),
-                        ))),
-              ],
-            )),
-        if (tabs == 0)
-          summary
-        else if (tabs == 1)
-          highTemperature
-        else if (tabs == 2)
-          symptoms
+                        child: Padding(
+                          padding: style
+                              ? const EdgeInsets.only(top: 2, right: 2)
+                              : const EdgeInsets.only(
+                                  top: 2, right: 2, bottom: 1),
+                          child: FlatButton(
+                              onPressed: () {
+                                setState(() {
+                                  tabs = 0;
+                                  style1 = false;
+                                  style2 = false;
+                                  style = true;
+                                });
+                              },
+                              color: colorChange(),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.only(
+                                    topRight: Radius.circular(10.0)),
+                              ),
+                              child: Text(
+                                'Summary',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontWeight: fontChange(),
+                                    fontFamily: 'Open Sans',
+                                    fontSize: 12,
+                                    color: Colors.black),
+                              )),
+                        )),
+                    Stack(children: [
+                      Container(
+                          height: style1 ? 50 : 47,
+                          margin: style1
+                              ? const EdgeInsets.only(left: 5)
+                              : const EdgeInsets.only(left: 5, bottom: 1),
+                          decoration: BoxDecoration(
+                            color: borderChange1(),
+                            borderRadius: BorderRadius.only(
+                                topRight: Radius.circular(10),
+                                topLeft: Radius.circular(10)),
+                          ),
+                          child: Padding(
+                            padding: style1
+                                ? const EdgeInsets.only(
+                                    top: 2, right: 2, left: 2)
+                                : const EdgeInsets.only(
+                                    top: 2, right: 2, left: 2, bottom: 2),
+                            child: FlatButton(
+                                onPressed: () {
+                                  setState(() {
+                                    tabs = 1;
+                                    style1 = true;
+                                    style2 = false;
+                                    style = false;
+                                  });
+                                },
+                                color: colorChange1(),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.only(
+                                      topRight: Radius.circular(10.0),
+                                      topLeft: Radius.circular(10.0)),
+                                ),
+                                child: Text(
+                                  'High\nTemperature',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontWeight: fontChange1(),
+                                      fontFamily: 'Open Sans',
+                                      fontSize: 12,
+                                      color: Colors.black),
+                                )),
+                          )),
+                      hightempNum(highTempList.length)
+                    ]),
+                    Stack(children: [
+                      Container(
+                          height: style2 ? 50 : 47,
+                          margin: style2
+                              ? const EdgeInsets.only(left: 5, right: 5)
+                              : const EdgeInsets.only(
+                                  left: 5, right: 5, bottom: 1),
+                          decoration: BoxDecoration(
+                            color: borderChange2(),
+                            borderRadius: BorderRadius.only(
+                                topRight: Radius.circular(10),
+                                topLeft: Radius.circular(10)),
+                          ),
+                          child: Padding(
+                            padding: style2
+                                ? const EdgeInsets.only(
+                                    top: 2, right: 2, left: 2)
+                                : const EdgeInsets.only(
+                                    top: 2, right: 2, left: 2, bottom: 3),
+                            child: FlatButton(
+                                onPressed: () {
+                                  setState(() {
+                                    tabs = 2;
+                                    style = false;
+                                    style1 = false;
+                                    style2 = true;
+                                  });
+                                },
+                                color: colorChange2(),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.only(
+                                      topRight: Radius.circular(10.0),
+                                      topLeft: Radius.circular(10.0)),
+                                ),
+                                child: Text(
+                                  'Symptoms',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontWeight: fontChange2(),
+                                      fontFamily: 'Open Sans',
+                                      fontSize: 12,
+                                      color: Colors.black),
+                                )),
+                          )),
+                      symptomsNum(symptomsList.length)
+                    ]),
+                  ],
+                ),
+              )),
+        ]),
       ],
     );
   }
+}
+
+showAlertDialog(BuildContext context) {
+  // set up the button
+  Widget okButton = FlatButton(
+    child: Text("OK"),
+    onPressed: () {
+      Navigator.pop(context);
+    },
+  );
+
+  // set up the AlertDialog
+  AlertDialog alert = AlertDialog(
+    title: Text("No Internet Connection"),
+    content: Text("Please Connect to the Internet!"),
+    actions: [
+      okButton,
+    ],
+  );
+
+  // show the dialog
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
 }

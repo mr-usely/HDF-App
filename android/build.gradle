@@ -3,11 +3,17 @@ buildscript {
     repositories {
         google()
         jcenter()
+        mavenCentral()
     }
 
     dependencies {
         classpath 'com.android.tools.build:gradle:3.5.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.android.tools.build:gradle:3.4.0'
+        classpath 'com.google.gms:google-services:4.3.4'
+        classpath ('com.google.firebase:firebase-plugins:1.1.0') {
+            exclude group: 'com.google.guava', module: 'guava-jdk5'
+        }
     }
 }
 

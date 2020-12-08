@@ -1,63 +1,149 @@
-import 'dart:ffi';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:HDF_App/dash.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 MediaQueryData queryData;
 
 class HDFPreview extends StatefulWidget {
+  final int superiorID;
   final int id;
   final int idEmployee;
   final String temperature;
   final String name;
   final String position;
+  final String encoder;
 
   HDFPreview(
       {Key key,
-      @required this.id,
+      @required this.superiorID,
+      this.id,
       this.idEmployee,
       this.name,
       this.position,
-      this.temperature})
+      this.temperature,
+      this.encoder})
       : super(key: key);
   @override
-  _HDFPreviewState createState() =>
-      _HDFPreviewState(id, idEmployee, name, position, temperature);
+  _HDFPreviewState createState() => _HDFPreviewState(
+      superiorID, id, idEmployee, name, position, temperature, encoder);
+}
+
+class AnswerList {
+  String first; // First Question Answer
+  String second; // Second Question Answer
+  String third; // Third Question Answer
+  String fourth; // Fourth Question Answer
+
+  AnswerList({this.first, this.second, this.third, this.fourth});
 }
 
 class _HDFPreviewState extends State<HDFPreview> {
+  int superiorID;
   int id;
   int idEmployee;
   String temperature;
   String name;
   String position;
-  _HDFPreviewState(
-      this.id, this.idEmployee, this.name, this.position, this.temperature);
+  String encoder;
+  _HDFPreviewState(this.superiorID, this.id, this.idEmployee, this.name,
+      this.position, this.temperature, this.encoder);
+
+  List<AnswerList> answerList = [];
+
+  Future<List> getJsonData() async {
+    String urlApi =
+        "http://203.177.199.130:8012/HDF_app/index.php?Get_Form_Data=" +
+            '$idEmployee';
+    http.Response response = await http.get(urlApi);
+    if (json.decode(response.body) != null) {
+      return json.decode(response.body);
+    } else {
+      return null;
+    }
+  }
+
+  fetchdata() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        if (getJsonData() != null) {
+          List _jsonValue = await getJsonData();
+
+          if (_jsonValue != null) {
+            setState(() {
+              for (var i = 0; i < _jsonValue.length; i++) {
+                answerList.add(AnswerList(
+                    first: _jsonValue[i]['first'],
+                    second: _jsonValue[i]['second'],
+                    third: _jsonValue[i]['third'],
+                    fourth: _jsonValue[i]['fourth']));
+              }
+
+              parseString1(answerList.length.toString());
+              // print(answerList[0].first +
+              //     ', ' +
+              //     answerList[0].second +
+              //     ', ' +
+              //     answerList[0].third +
+              //     ', ' +
+              //     answerList[0].fourth);
+            });
+          } else {
+            answerList
+                .add(AnswerList(first: '', second: '', third: '', fourth: ''));
+          }
+        } else {
+          answerList
+              .add(AnswerList(first: '', second: '', third: '', fourth: ''));
+        }
+      }
+    } on SocketException catch (_) {
+      showAlertDialog1(context);
+    }
+  }
+
+  parseString1(String data) {
+    if (data.length != 0)
+      return data;
+    else
+      return Text('');
+  }
+
   @override
   void initState() {
     super.initState();
+    fetchdata();
+    print(superiorID);
   }
 
   backButton() {
-    if (idEmployee != null) {
-      return IconButton(
-          icon: Icon(Icons.arrow_back_ios,
-              color: Color.fromARGB(220, 16, 204, 169)),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => HDFhome(idname: id)),
-            );
-          });
-    } else {
-      return IconButton(
-          icon: Icon(Icons.arrow_back_ios,
-              color: Color.fromARGB(220, 16, 204, 169)),
-          onPressed: () {
-            Navigator.pop(context);
-          });
-    }
+    //if (idEmployee != null) {
+    return IconButton(
+        icon: Icon(Icons.arrow_back_ios,
+            color: Color.fromARGB(220, 16, 204, 169)),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => HDFhome(
+                      idname: superiorID,
+                      encoder: encoder,
+                    )),
+          );
+        });
+    //}
+    //else {
+    // return IconButton(
+    //     icon: Icon(Icons.arrow_back_ios,
+    //         color: Color.fromARGB(220, 16, 204, 169)),
+    //     onPressed: () {
+    //       Navigator.pop(context);
+    //     });
+    //}
   }
 
   @override
@@ -93,7 +179,7 @@ class _HDFPreviewState extends State<HDFPreview> {
                             ),
                             Container(
                               width: 170,
-                              margin: const EdgeInsets.only(bottom: 45),
+                              margin: const EdgeInsets.only(bottom: 5),
                               child: Text(
                                 'Name: ' + name,
                                 textAlign: TextAlign.left,
@@ -145,36 +231,43 @@ class _HDFPreviewState extends State<HDFPreview> {
           shadowColor: Colors.black,
           elevation: 10,
           margin: const EdgeInsets.only(left: 10.0, right: 10.0, top: 10.0),
-          child: Column(mainAxisSize: MainAxisSize.max, children: <Widget>[
-            Container(
-              margin: const EdgeInsets.only(top: 20, left: 20, right: 20),
-              child: Text(
-                  '1. In the past 14 days, which of the following' +
-                      ' symptom(s) have you experienced, please check (✓) the' +
-                      " relevant box(es). If it's not your first time filling up this" +
-                      " form, kindly just indicate what you're experiencing right now.",
-                  style: TextStyle(
-                      fontFamily: 'Open Sans',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.5)),
-            ),
-            Container(
-              margin: const EdgeInsets.only(left: 20),
-              child: Column(
-                children: <Widget>[
-                  Container(
-                    width: 130,
-                    child: Text(
-                      'Answer: ' + position,
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  alignment: Alignment.centerLeft,
+                  margin: const EdgeInsets.only(left: 20, top: 20),
+                  child: Text('1. Symptoms experienced in 14 days.',
                       textAlign: TextAlign.left,
                       style: TextStyle(
-                          fontWeight: FontWeight.w700, fontFamily: 'Open Sans'),
-                    ),
+                          fontFamily: 'Open Sans',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13.5)),
+                ),
+                Container(
+                  margin:
+                      const EdgeInsets.only(left: 40, bottom: 20, right: 10),
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                          child: Column(
+                        children: List.generate(
+                          answerList.length,
+                          (index) => Container(
+                            child: Text(
+                              'Answer: ' + answerList[index].first,
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Open Sans'),
+                            ),
+                          ),
+                        ),
+                      )),
+                    ],
                   ),
-                ],
-              ),
-            )
-          ]),
+                )
+              ]),
         ),
       ],
     );
@@ -197,17 +290,21 @@ class _HDFPreviewState extends State<HDFPreview> {
                         fontSize: 13.5))),
             Container(
                 margin:
-                    const EdgeInsets.only(left: 40.0, top: 0.0, bottom: 5.0),
-                child: Column(children: <Widget>[
+                    const EdgeInsets.only(left: 40.0, top: 0.0, bottom: 20.0),
+                child: Row(children: <Widget>[
                   Container(
-                    width: 130,
-                    child: Text(
-                      'Answer: ' + position,
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700, fontFamily: 'Open Sans'),
+                      child: Column(
+                    children: List.generate(
+                      answerList.length,
+                      (index) => Text(
+                        'Answer: ' + answerList[index].second,
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Open Sans'),
+                      ),
                     ),
-                  ),
+                  )),
                 ]))
           ]),
         )
@@ -232,17 +329,21 @@ class _HDFPreviewState extends State<HDFPreview> {
                         fontSize: 13.5))),
             Container(
                 margin:
-                    const EdgeInsets.only(left: 40.0, top: 0.0, bottom: 5.0),
-                child: Column(children: <Widget>[
+                    const EdgeInsets.only(left: 40.0, top: 0.0, bottom: 20.0),
+                child: Row(children: <Widget>[
                   Container(
-                    width: 130,
-                    child: Text(
-                      'Answer: ' + position,
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700, fontFamily: 'Open Sans'),
+                      child: Column(
+                    children: List.generate(
+                      answerList.length,
+                      (index) => Text(
+                        'Answer: ' + answerList[index].third,
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Open Sans'),
+                      ),
                     ),
-                  ),
+                  )),
                 ]))
           ]),
         )
@@ -267,17 +368,21 @@ class _HDFPreviewState extends State<HDFPreview> {
                         fontSize: 13.5))),
             Container(
                 margin:
-                    const EdgeInsets.only(left: 40.0, top: 0.0, bottom: 5.0),
-                child: Column(children: <Widget>[
+                    const EdgeInsets.only(left: 40.0, top: 0.0, bottom: 20.0),
+                child: Row(children: <Widget>[
                   Container(
-                    width: 130,
-                    child: Text(
-                      'Answer: ' + position,
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700, fontFamily: 'Open Sans'),
+                      child: Column(
+                    children: List.generate(
+                      answerList.length,
+                      (index) => Text(
+                        'Answer: ' + answerList[index].fourth,
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Open Sans'),
+                      ),
                     ),
-                  ),
+                  )),
                 ]))
           ]),
         )
@@ -289,12 +394,13 @@ class _HDFPreviewState extends State<HDFPreview> {
           appBar: AppBar(
             centerTitle: true,
             leading: backButton(),
+            brightness: Brightness.light,
             title: Text(
               'Health Declaration Form',
               style: TextStyle(
                   fontFamily: 'Open Sans',
                   fontSize: 18.0,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: Colors.black),
             ),
             elevation: 10,
@@ -329,4 +435,31 @@ class _HDFPreviewState extends State<HDFPreview> {
               ),
             ));
   }
+}
+
+showAlertDialog1(BuildContext context) {
+  // set up the button
+  Widget okButton = FlatButton(
+    child: Text("OK"),
+    onPressed: () {
+      Navigator.pop(context);
+    },
+  );
+
+  // set up the AlertDialog
+  AlertDialog alert = AlertDialog(
+    title: Text("No Internet Connection"),
+    content: Text("Please Connect to the Internet!"),
+    actions: [
+      okButton,
+    ],
+  );
+
+  // show the dialog
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
 }

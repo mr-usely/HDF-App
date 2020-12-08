@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -12,18 +13,20 @@ class HDFform extends StatefulWidget {
   final int employeeID;
   final String name;
   final String position;
+  final String encoderName;
   HDFform(
       {Key key,
       @required this.id,
       this.employeeID,
       this.employeeid,
       this.name,
+      this.encoderName,
       this.position,
       this.idEmployee})
       : super(key: key);
   @override
-  _HDFformState createState() =>
-      _HDFformState(id, employeeID, name, position, idEmployee, employeeid);
+  _HDFformState createState() => _HDFformState(
+      id, employeeID, name, position, idEmployee, employeeid, encoderName);
 }
 
 class AnswerList {
@@ -42,8 +45,9 @@ class _HDFformState extends State<HDFform> {
   int employeeid; // employee User ID
   String name; // employee name
   String position; // employee position
+  String encoderName;
   _HDFformState(this.id, this.employeeID, this.name, this.position,
-      this.idEmployee, this.employeeid);
+      this.idEmployee, this.employeeid, this.encoderName);
 
   //set Id for Identification
   int userId = 0;
@@ -51,30 +55,45 @@ class _HDFformState extends State<HDFform> {
 
   TextEditingController othersController = TextEditingController();
   TextEditingController temperatureController = TextEditingController();
+  ScrollController _scrollController = new ScrollController();
   bool _isLoading = false;
   bool isTemperatureValidate = false;
+  String errorMessage = "";
 
   String termsConditions = '';
-  String secondQuestion = 'No';
-  String thirdQuestion = 'No';
-  String fourthQuestion = 'No';
+  String secondQuestion = '0';
+  String thirdQuestion = '0';
+  String fourthQuestion = '0';
 
   int id1 = 1;
   int id2 = 2;
   int id3 = 2;
   int id4 = 2;
 
+  int fever = 0;
+  int soreThroat = 0;
+  int diarrhea = 0;
+  int bodyAches = 0;
+  int headAches = 0;
+  int dryCough = 0;
+  int tirednessFatigue = 0;
+  int shortnessOfBreath = 0;
+  int runnyNose = 0;
+  int loseOfSmellAndTaste = 0;
+  int noneAbove = 0;
+  int iAgree = 0;
+
   Map<String, bool> symptoms = {
     'Fever': false,
-    'Sore Throat': false,
+    'SoreThroat': false,
     'Diarrhea': false,
-    'Body Aches': false,
-    'Head Aches': false,
-    'Dry Cough': false,
-    'Shortness of Breath': false,
-    'Tiredness/Fatigue': false,
-    'Runny Nose': false,
-    'Loss of Smell/Taste': false,
+    'BodyAches': false,
+    'HeadAches': false,
+    'DryCough': false,
+    'ShortnessofBreath': false,
+    'TirednessFatigue': false,
+    'RunnyNose': false,
+    'LossofSmellTaste': false,
     'noneAbove': false,
   };
 
@@ -89,11 +108,11 @@ class _HDFformState extends State<HDFform> {
   List<AnswerList> nList = [
     AnswerList(
       index: 1,
-      answer: "Yes",
+      answer: "1", //yes
     ),
     AnswerList(
       index: 2,
-      answer: "No",
+      answer: "0", // no
     ),
     AnswerList(
       index: 3,
@@ -101,7 +120,6 @@ class _HDFformState extends State<HDFform> {
     ),
   ];
 
-  var holder_1 = [];
   String hold2 = '';
   bool value;
 
@@ -112,30 +130,30 @@ class _HDFformState extends State<HDFform> {
   noneOfAbove() {
     if (symptoms['noneAbove'] == true) {
       symptoms['Fever'] = false;
-      symptoms['Sore Throat'] = false;
+      symptoms['SoreThroat'] = false;
       symptoms['Diarrhea'] = false;
-      symptoms['Body Aches'] = false;
-      symptoms['Head Aches'] = false;
-      symptoms['Dry Cough'] = false;
-      symptoms['Tiredness/Fatigue'] = false;
-      symptoms['Shortness of Breath'] = false;
-      symptoms['Runny Nose'] = false;
-      symptoms['Loss of Smell/Taste'] = false;
+      symptoms['BodyAches'] = false;
+      symptoms['HeadAches'] = false;
+      symptoms['DryCough'] = false;
+      symptoms['TirednessFatigue'] = false;
+      symptoms['ShortnessofBreath'] = false;
+      symptoms['RunnyNose'] = false;
+      symptoms['LossofSmellTaste'] = false;
       others['others'] = false;
     }
   }
 
   clear() {
     symptoms['Fever'] = false;
-    symptoms['Sore Throat'] = false;
+    symptoms['SoreThroat'] = false;
     symptoms['Diarrhea'] = false;
-    symptoms['Body Aches'] = false;
-    symptoms['Head Aches'] = false;
-    symptoms['Dry Cough'] = false;
-    symptoms['Tiredness/Fatigue'] = false;
-    symptoms['Shortness of Breath'] = false;
-    symptoms['Runny Nose'] = false;
-    symptoms['Loss of Smell/Taste'] = false;
+    symptoms['BodyAches'] = false;
+    symptoms['HeadAches'] = false;
+    symptoms['DryCough'] = false;
+    symptoms['TirednessFatigue'] = false;
+    symptoms['ShortnessofBreath'] = false;
+    symptoms['RunnyNose'] = false;
+    symptoms['LossofSmellTaste'] = false;
     others['others'] = false;
     symptoms['noneAbove'] = false;
     agree['IAgree'] = false;
@@ -146,147 +164,191 @@ class _HDFformState extends State<HDFform> {
 
   // Get items and send it to database.
   getItems() async {
-    // Validate Temperature
-
-    if (_homeKey.currentState.validate()) {
-      //Change user ID
-      if (idEmployee != null) {
-        userId = idEmployee;
-      } else {
-        userId = id;
-      }
-
-      agree.keys.map((String key) {
-        termsConditions = (key);
-        value = agree[key];
-      }).toList();
-
-      if (double.tryParse(temperatureController.text) >= 45 ||
-          double.tryParse(temperatureController.text) <= 30) {
-        showInvalidTemp(context, 'invalidTemp');
-      } else if (termsConditions == 'IAgree' &&
-          value == true &&
-          temperatureController.text.isNotEmpty) {
-        symptoms.forEach((key, value) {
-          if (value == true) {
-            holder_1.add(key);
-          }
-        });
-
-        //hold2 = secondQuestion;
-        if (holder_1.isNotEmpty && symptoms['noneAbove'] == false) {
-          String url = "http://203.177.199.130:8012/HDF_app/index.php";
-          var res = await http.post(Uri.encodeFull(url), headers: {
-            "Accept": "application/json"
-          }, body: {
-            "HDFForm": "Form_Answer",
-            "ID": "$userId",
-            "firstQuestion": "$holder_1",
-            "Others": othersController.text,
-            "secondQuestion": secondQuestion,
-            "thirdQuestion": thirdQuestion,
-            "fourthQuestion": fourthQuestion,
-            "termsConditions": termsConditions,
-            "temperature": temperatureController.text,
-          });
-
-          print(holder_1);
-          print(othersController.text +
-              secondQuestion +
-              ',' +
-              thirdQuestion +
-              ',' +
-              fourthQuestion);
-
-          if (res.body.isNotEmpty) {
-            print(json.decode(res.body));
-
-            holder_1.clear();
-            secondQuestion = '';
-            thirdQuestion = '';
-            fourthQuestion = '';
-            termsConditions = '';
-
-            //var id = int.parse(name[0]);
-            showSuccessDialog(context, id);
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        //validate
+        if (_homeKey.currentState.validate()) {
+          //Change user ID
+          if (idEmployee != null) {
+            userId = idEmployee;
           } else {
-            print('Failed to Submit');
+            userId = id;
           }
-        } else if (others['others'] == true &&
-            othersController.text.isEmpty &&
-            temperatureController.text.isEmpty) {
-          showAlertDialog(context);
-        } else if (others['others'] == false &&
-            symptoms['noneAbove'] == false &&
-            holder_1.isEmpty) {
-          showAlertDialog(context);
-        } else if (others['others'] == true &&
-            othersController.text.isNotEmpty) {
-          String url = "http://203.177.199.130:8012/HDF_app/index.php";
-          var res = await http.post(Uri.encodeFull(url), headers: {
-            "Accept": "application/json"
-          }, body: {
-            "HDFForm": "Form_Answer",
-            "ID": "$userId",
-            "firstQuestion": "$holder_1",
-            "Others": othersController.text,
-            "secondQuestion": secondQuestion,
-            "thirdQuestion": thirdQuestion,
-            "fourthQuestion": fourthQuestion,
-            "termsConditions": termsConditions,
-            "temperature": temperatureController.text,
-          });
-          if (res.body.isNotEmpty) {
-            print(json.decode(res.body));
 
-            holder_1.clear();
-            secondQuestion = '';
-            thirdQuestion = '';
-            fourthQuestion = '';
-            termsConditions = '';
+          agree.keys.map((String key) {
+            termsConditions = (key);
+            value = agree[key];
+          }).toList();
 
-            //var id = int.parse(name[0]);
-            showSuccessDialog(context, id);
+          if (double.tryParse(temperatureController.text) >= 45 ||
+              double.tryParse(temperatureController.text) <= 30) {
+            _scrollController.animateTo(
+              2.0,
+              curve: Curves.easeOut,
+              duration: const Duration(milliseconds: 300),
+            );
+            setState(() {
+              errorMessage =
+                  "Invalid Temperature: Your temperature is too High or too Low.";
+              showTooltip = true;
+            });
+            //showInvalidTemp(context, 'invalidTemp');
+          } else if (termsConditions == 'IAgree' &&
+              value == true &&
+              temperatureController.text.isNotEmpty) {
+            iAgree = 1;
+            //hold2 = secondQuestion;
+            if (symptoms['noneAbove'] == false) {
+              String url = "http://203.177.199.130:8012/HDF_app/index.php";
+              var res = await http.post(Uri.encodeFull(url), headers: {
+                "Accept": "application/json"
+              }, body: {
+                "HDFForm": "Form_Answer",
+                "EncoderID": "$id",
+                "ID": "$userId",
+                "Fever": fever.toString(),
+                "SoreThroat": soreThroat.toString(),
+                "Diarrhea": diarrhea.toString(),
+                "BodyAches": bodyAches.toString(),
+                "HeadAches": headAches.toString(),
+                "DryCough": dryCough.toString(),
+                "TirednessFatigue": tirednessFatigue.toString(),
+                "ShortnessOfBreath": shortnessOfBreath.toString(),
+                "RunnyNose": runnyNose.toString(),
+                "LoseOfSmellAndTaste": loseOfSmellAndTaste.toString(),
+                "Others": othersController.text,
+                "secondQuestion": secondQuestion,
+                "thirdQuestion": thirdQuestion,
+                "fourthQuestion": fourthQuestion,
+                "termsConditions": iAgree.toString(),
+                "temperature": temperatureController.text,
+                "NoneOFTheAbove": noneAbove.toString(),
+                "Encoder": encoderName,
+              });
+
+              // print(holder_1);
+              print(othersController.text +
+                  secondQuestion +
+                  ',' +
+                  thirdQuestion +
+                  ',' +
+                  fourthQuestion);
+
+              if (res.body.isNotEmpty) {
+                print(json.decode(res.body));
+                secondQuestion = '';
+                thirdQuestion = '';
+                fourthQuestion = '';
+                termsConditions = '';
+
+                //var id = int.parse(name[0]);
+                showSuccessDialog(context, id, encoderName);
+              } else {
+                print('Failed to Submit.');
+              }
+            } else if (others['others'] == true &&
+                othersController.text.isEmpty &&
+                temperatureController.text.isEmpty) {
+              showAlertDialog(context);
+            } else if (others['others'] == false &&
+                symptoms['noneAbove'] == false) {
+              showAlertDialog(context);
+            } else if (others['others'] == true &&
+                othersController.text.isNotEmpty) {
+              iAgree = 1;
+              String url = "http://203.177.199.130:8012/HDF_app/index.php";
+              var res = await http.post(Uri.encodeFull(url), headers: {
+                "Accept": "application/json"
+              }, body: {
+                "HDFForm": "Form_Answer",
+                "EncoderID": "$id",
+                "ID": "$userId",
+                "Fever": fever.toString(),
+                "SoreThroat": soreThroat.toString(),
+                "Diarrhea": diarrhea.toString(),
+                "BodyAches": bodyAches.toString(),
+                "HeadAches": headAches.toString(),
+                "DryCough": dryCough.toString(),
+                "TirednessFatigue": tirednessFatigue.toString(),
+                "ShortnessOfBreath": shortnessOfBreath.toString(),
+                "RunnyNose": runnyNose.toString(),
+                "LoseOfSmellAndTaste": loseOfSmellAndTaste.toString(),
+                "Others": othersController.text,
+                "secondQuestion": secondQuestion,
+                "thirdQuestion": thirdQuestion,
+                "fourthQuestion": fourthQuestion,
+                "termsConditions": iAgree.toString(),
+                "temperature": temperatureController.text,
+                "NoneOFTheAbove": noneAbove.toString(),
+                "Encoder": encoderName,
+              });
+              if (res.body.isNotEmpty) {
+                print(json.decode(res.body));
+
+                secondQuestion = '';
+                thirdQuestion = '';
+                fourthQuestion = '';
+                termsConditions = '';
+
+                //var id = int.parse(name[0]);
+                showSuccessDialog(context, id, encoderName);
+              } else {
+                print('Failed to Submit');
+              }
+            } else if (symptoms['noneAbove'] == true) {
+              iAgree = 1;
+              String url = "http://203.177.199.130:8012/HDF_app/index.php";
+              var res = await http.post(Uri.encodeFull(url), headers: {
+                "Accept": "application/json"
+              }, body: {
+                "HDFForm": "Form_Answer",
+                "EncoderID": "$id",
+                "ID": "$userId",
+                "Fever": fever.toString(),
+                "SoreThroat": soreThroat.toString(),
+                "Diarrhea": diarrhea.toString(),
+                "BodyAches": bodyAches.toString(),
+                "HeadAches": headAches.toString(),
+                "DryCough": dryCough.toString(),
+                "TirednessFatigue": tirednessFatigue.toString(),
+                "ShortnessOfBreath": shortnessOfBreath.toString(),
+                "RunnyNose": runnyNose.toString(),
+                "LoseOfSmellAndTaste": loseOfSmellAndTaste.toString(),
+                "Others": othersController.text,
+                "secondQuestion": secondQuestion,
+                "thirdQuestion": thirdQuestion,
+                "fourthQuestion": fourthQuestion,
+                "termsConditions": iAgree.toString(),
+                "temperature": temperatureController.text,
+                "NoneOFTheAbove": noneAbove.toString(),
+                "Encoder": encoderName,
+              });
+              if (res.body.isNotEmpty) {
+                print(json.decode(res.body));
+
+                secondQuestion = '';
+                thirdQuestion = '';
+                fourthQuestion = '';
+                termsConditions = '';
+
+                //var id = int.parse(name[0]);
+                showSuccessDialog(context, id, encoderName);
+              } else {
+                print('Failed to Submit');
+              }
+            } else {
+              showAlertDialog(context);
+            }
           } else {
-            print('Failed to Submit');
-          }
-        } else if (symptoms['noneAbove'] == true) {
-          String url = "http://203.177.199.130:8012/HDF_app/index.php";
-          var res = await http.post(Uri.encodeFull(url), headers: {
-            "Accept": "application/json"
-          }, body: {
-            "HDFForm": "Form_Answer",
-            "ID": "$userId",
-            "firstQuestion": "$holder_1",
-            "Others": othersController.text,
-            "secondQuestion": secondQuestion,
-            "thirdQuestion": thirdQuestion,
-            "fourthQuestion": fourthQuestion,
-            "termsConditions": termsConditions,
-            "temperature": temperatureController.text,
-          });
-          if (res.body.isNotEmpty) {
-            print(json.decode(res.body));
-
-            holder_1.clear();
-            secondQuestion = '';
-            thirdQuestion = '';
-            fourthQuestion = '';
-            termsConditions = '';
-
-            //var id = int.parse(name[0]);
-            showSuccessDialog(context, id);
-          } else {
-            print('Failed to Submit');
+            showAlertDialog(context);
           }
         } else {
-          showAlertDialog(context);
+          showInvalidTemp(context, 'invalidChar');
         }
-      } else {
-        showAlertDialog(context);
       }
-    } else {
-      showInvalidTemp(context, 'invalidChar');
+    } on SocketException catch (_) {
+      internetAlertDialog(context);
     }
   }
 
@@ -311,15 +373,48 @@ class _HDFformState extends State<HDFform> {
     }
   }
 
+  FocusNode _focusNode;
+  bool _hasInputError = false;
+  String text = '';
+  bool showTooltip = false;
+
   @override
   void initState() {
     super.initState();
+    print('Form Encoder: ' + encoderName);
     //Change user ID
     if (idEmployee != null) {
       userId = idEmployee;
     } else {
       userId = id;
     }
+    _focusNode = new FocusNode();
+    _focusNode.addListener(() {
+      if (double.parse(text) >= 37.5 && double.parse(text) <= 45.5) {
+        setState(() {
+          _hasInputError = false;
+          symptoms['Fever'] = true; //Check your conditions on text variable
+          fever = 1;
+          errorMessage =
+              "Temperature is considered that you have a fever. If not sure, please retake the reading of your temperature.";
+          showTooltip = true;
+        });
+      } else if (double.parse(text) <= 37 && symptoms['Fever'] == true) {
+        showTooltip = true;
+        symptoms['Fever'] = true;
+        fever = 1;
+      } else if (double.parse(text) <= 37 && symptoms['Fever'] == false) {
+        showTooltip = false;
+        symptoms['Fever'] = false;
+        fever = 0;
+      } else {
+        setState(() {
+          errorMessage = "";
+          _hasInputError = false;
+          showTooltip = false;
+        });
+      }
+    });
 
     print(idEmployee);
     print(employeeid);
@@ -388,30 +483,66 @@ class _HDFformState extends State<HDFform> {
                                     fontFamily: 'Open Sans'),
                               ),
                             ),
-                            SizedBox(
-                              width: 130,
-                              height: 72,
-                              child: TextFormField(
-                                  controller: this.temperatureController,
-                                  autocorrect: true,
-                                  keyboardType: TextInputType.number,
-                                  maxLengthEnforced: true,
-                                  maxLength: 4,
-                                  inputFormatters: [
-                                    new FilteringTextInputFormatter.deny(
-                                        new RegExp('[\\,|\\-|\\ ]')),
-                                  ],
-                                  validator: (value) {
-                                    if (value.contains(
-                                        new RegExp('[\\,|\\-|\\ ]'))) {
-                                      return 'Please enter valid temperature.';
-                                    }
-                                    return null;
-                                  },
-                                  decoration: InputDecoration(
-                                    labelText: 'Temp. Reading',
-                                  )),
-                            ),
+                            Stack(clipBehavior: Clip.none, children: <Widget>[
+                              SizedBox(
+                                width: 130,
+                                height: 72,
+                                child: TextFormField(
+                                    focusNode: _focusNode,
+                                    controller: this.temperatureController,
+                                    autocorrect: true,
+                                    autofocus: true,
+                                    keyboardType: TextInputType.number,
+                                    maxLengthEnforced: true,
+                                    maxLength: 4,
+                                    onChanged: (String _text) {
+                                      setState(() {
+                                        text = _text;
+                                      });
+                                    },
+                                    inputFormatters: [
+                                      new FilteringTextInputFormatter.deny(
+                                          new RegExp('[\\,|\\-|\\ ]')),
+                                    ],
+                                    validator: (value) {
+                                      if (value.contains(
+                                          new RegExp('[\\,|\\-|\\ ]'))) {
+                                        return 'Please enter valid temperature.';
+                                      }
+                                      return null;
+                                    },
+                                    decoration: InputDecoration(
+                                      labelText: 'Temp. Reading',
+                                    )),
+                              ),
+                              Positioned(
+                                top: 50,
+                                right: 10,
+                                //You can use your own custom tooltip widget over here in place of below Container
+                                child: showTooltip
+                                    ? Container(
+                                        width: 260,
+                                        height: 53,
+                                        decoration: BoxDecoration(
+                                            color:
+                                                Color.fromARGB(250, 51, 50, 50),
+                                            borderRadius:
+                                                BorderRadius.circular(10)),
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 10),
+                                        child: Center(
+                                          child: Text(
+                                            errorMessage,
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontFamily: 'Open Sans',
+                                                fontSize: 12),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(),
+                              )
+                            ]),
                           ],
                         ),
                       ),
@@ -453,7 +584,31 @@ class _HDFformState extends State<HDFform> {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
                                   symptoms['Fever'] = value;
+                                  if (symptoms['Fever'] == true) {
+                                    fever = 1;
+                                  } else {
+                                    fever = 0;
+                                  }
                                 });
+
+                                if (symptoms['Fever'] == true &&
+                                    double.parse(text) < 37.5) {
+                                  setState(() {
+                                    fever = 1;
+                                    _hasInputError = true;
+                                    errorMessage =
+                                        "Invalid Temperature: Your temperature is too low to " +
+                                            "declare that you have a fever.";
+
+                                    showTooltip = true;
+                                    FocusScope.of(context)
+                                        .requestFocus(_focusNode);
+                                    _showToast(context);
+                                  });
+                                } else {
+                                  _hasInputError = false;
+                                  showTooltip = false;
+                                }
                               } else {
                                 return null;
                               }
@@ -466,12 +621,17 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['Sore Throat'],
+                            value: symptoms['SoreThroat'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['Sore Throat'] = value;
+                                  symptoms['SoreThroat'] = value;
+                                  if (symptoms['SoreThroat'] == true) {
+                                    soreThroat = 1;
+                                  } else {
+                                    soreThroat = 0;
+                                  }
                                 });
                               } else {
                                 return null;
@@ -491,6 +651,11 @@ class _HDFformState extends State<HDFform> {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
                                   symptoms['Diarrhea'] = value;
+                                  if (symptoms['Diarrhea'] == true) {
+                                    diarrhea = 1;
+                                  } else {
+                                    diarrhea = 0;
+                                  }
                                 });
                               } else {
                                 return null;
@@ -510,12 +675,17 @@ class _HDFformState extends State<HDFform> {
                     child: Row(
                       children: <Widget>[
                         Checkbox(
-                            value: symptoms['Body Aches'],
+                            value: symptoms['BodyAches'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['Body Aches'] = value;
+                                  symptoms['BodyAches'] = value;
+                                  if (symptoms['BodyAches'] == true) {
+                                    bodyAches = 1;
+                                  } else {
+                                    bodyAches = 0;
+                                  }
                                 });
                               } else {
                                 return null;
@@ -529,12 +699,17 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['Head Aches'],
+                            value: symptoms['HeadAches'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['Head Aches'] = value;
+                                  symptoms['HeadAches'] = value;
+                                  if (symptoms['HeadAches'] == true) {
+                                    headAches = 1;
+                                  } else {
+                                    headAches = 0;
+                                  }
                                 });
                               } else {
                                 return null;
@@ -548,12 +723,17 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['Dry Cough'],
+                            value: symptoms['DryCough'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['Dry Cough'] = value;
+                                  symptoms['DryCough'] = value;
+                                  if (symptoms['DryCough'] == true) {
+                                    dryCough = 1;
+                                  } else {
+                                    dryCough = 0;
+                                  }
                                 });
                               } else {
                                 return null;
@@ -573,12 +753,17 @@ class _HDFformState extends State<HDFform> {
                     child: Row(
                       children: <Widget>[
                         Checkbox(
-                            value: symptoms['Shortness of Breath'],
+                            value: symptoms['ShortnessofBreath'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['Shortness of Breath'] = value;
+                                  symptoms['ShortnessofBreath'] = value;
+                                  if (symptoms['ShortnessofBreath'] == true) {
+                                    shortnessOfBreath = 1;
+                                  } else {
+                                    shortnessOfBreath = 0;
+                                  }
                                 });
                               } else {
                                 return null;
@@ -592,12 +777,17 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['Tiredness/Fatigue'],
+                            value: symptoms['TirednessFatigue'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['Tiredness/Fatigue'] = value;
+                                  symptoms['TirednessFatigue'] = value;
+                                  if (symptoms['TirednessFatigue'] == true) {
+                                    tirednessFatigue = 1;
+                                  } else {
+                                    tirednessFatigue = 0;
+                                  }
                                 });
                               } else {
                                 return null;
@@ -611,12 +801,17 @@ class _HDFformState extends State<HDFform> {
                               fontWeight: FontWeight.w600),
                         ),
                         Checkbox(
-                            value: symptoms['Runny Nose'],
+                            value: symptoms['RunnyNose'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['Runny Nose'] = value;
+                                  symptoms['RunnyNose'] = value;
+                                  if (symptoms['RunnyNose'] == true) {
+                                    runnyNose = 1;
+                                  } else {
+                                    runnyNose = 0;
+                                  }
                                 });
                               } else {
                                 return null;
@@ -636,12 +831,17 @@ class _HDFformState extends State<HDFform> {
                     child: Row(
                       children: <Widget>[
                         Checkbox(
-                            value: symptoms['Loss of Smell/Taste'],
+                            value: symptoms['LossofSmellTaste'],
                             activeColor: Color.fromARGB(220, 16, 204, 169),
                             onChanged: (bool value) {
                               if (symptoms['noneAbove'] == false) {
                                 setState(() {
-                                  symptoms['Loss of Smell/Taste'] = value;
+                                  symptoms['LossofSmellTaste'] = value;
+                                  if (symptoms['LossofSmellTaste'] == true) {
+                                    loseOfSmellAndTaste = 1;
+                                  } else {
+                                    loseOfSmellAndTaste = 0;
+                                  }
                                 });
                               } else {
                                 return null;
@@ -680,6 +880,11 @@ class _HDFformState extends State<HDFform> {
                               setState(() {
                                 symptoms['noneAbove'] = value;
                                 noneOfAbove();
+                                if (symptoms['noneAbove'] == true) {
+                                  noneAbove = 1;
+                                } else {
+                                  noneAbove = 0;
+                                }
                               });
                             }),
                         Text(
@@ -938,7 +1143,7 @@ class _HDFformState extends State<HDFform> {
                   'I hereby authorize UNIVERSAL LEAF PHILIPPINES, INC., to collect' +
                       ' and process the data indicated herein for the purpose of effecti' +
                       'ng control of the COVID-19 infection. I understand that my perso' +
-                      'al information is protected by RA 10173, Data Privacy Act of 2012,' +
+                      'nal information is protected by RA 10173, Data Privacy Act of 2012,' +
                       ' and that I am required by RA 11469, Bayanihan to Heal as One' +
                       'Act, to provide truthful information.',
                   style: TextStyle(
@@ -956,6 +1161,11 @@ class _HDFformState extends State<HDFform> {
                       onChanged: (bool value) {
                         setState(() {
                           agree['IAgree'] = value;
+                          if (agree['IAgree']) {
+                            iAgree = 1;
+                          } else {
+                            iAgree = 0;
+                          }
                         });
                       }),
                   Text(
@@ -1015,12 +1225,13 @@ class _HDFformState extends State<HDFform> {
           appBar: AppBar(
             centerTitle: true,
             leading: backButton(),
+            brightness: Brightness.light,
             title: Text(
               'Health Declaration Form',
               style: TextStyle(
                   fontFamily: 'Open Sans',
                   fontSize: 18.0,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: Colors.black),
             ),
             elevation: 10,
@@ -1030,7 +1241,7 @@ class _HDFformState extends State<HDFform> {
             key: _homeKey,
             child: _isLoading
                 ? Center(child: CircularProgressIndicator())
-                : ListView(children: <Widget>[
+                : ListView(controller: _scrollController, children: <Widget>[
                     firstcard,
                     secondcard,
                     thirdcard,
@@ -1061,6 +1272,44 @@ class _HDFformState extends State<HDFform> {
               ),
             ));
   }
+
+  void _showToast(BuildContext context) {
+    final scaffold = Scaffold.of(context);
+    scaffold.showSnackBar(
+      SnackBar(
+        content: const Text('Your temperature is too low to declare a fever'),
+        action: SnackBarAction(
+            label: 'UNDO', onPressed: scaffold.hideCurrentSnackBar),
+      ),
+    );
+  }
+}
+
+internetAlertDialog(BuildContext context) {
+  // set up the button
+  Widget okButton = FlatButton(
+    child: Text("OK"),
+    onPressed: () {
+      Navigator.pop(context);
+    },
+  );
+
+  // set up the AlertDialog
+  AlertDialog alert = AlertDialog(
+    title: Text("No Internet Connection"),
+    content: Text("Please Connect to the Internet!"),
+    actions: [
+      okButton,
+    ],
+  );
+
+  // show the dialog
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
 }
 
 showAlertDialog(BuildContext context) {
@@ -1125,7 +1374,7 @@ showInvalidTemp(BuildContext context, String valid) {
   );
 }
 
-showSuccessDialog(BuildContext context, int id) {
+showSuccessDialog(BuildContext context, int id, String encoder) {
   // set up the AlertDialog
   AlertDialog alert = AlertDialog(
     title: Text(
@@ -1150,7 +1399,8 @@ showSuccessDialog(BuildContext context, int id) {
       Future.delayed(Duration(seconds: 4), () {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => new HDFhome(idname: id)),
+          MaterialPageRoute(
+              builder: (context) => new HDFhome(idname: id, encoder: encoder)),
         );
       });
 

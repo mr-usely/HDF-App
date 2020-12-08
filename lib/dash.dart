@@ -5,24 +5,28 @@ import 'Widgets/Report.dart';
 
 class HDFhome extends StatefulWidget {
   final int idname;
-
-  HDFhome({Key key, @required this.idname}) : super(key: key);
+  final String encoder;
+  HDFhome({Key key, @required this.idname, this.encoder}) : super(key: key);
   @override
-  _HDFhomeState createState() => _HDFhomeState(idname);
+  _HDFhomeState createState() => _HDFhomeState(idname, encoder);
 }
 
 MediaQueryData queryData;
 
 class _HDFhomeState extends State<HDFhome> {
   int idname;
-  _HDFhomeState(this.idname);
+  String encoder;
+  _HDFhomeState(this.idname, this.encoder);
 
   int tabs = 1;
   int id = 7;
 
   changeTab() {
     if (tabs == 1) {
-      return ListAccomplish(idname: idname);
+      return ListAccomplish(
+        idname: idname,
+        encoder: encoder,
+      );
     } else if (tabs == 0) {
       return Reports(idname: idname);
     }
@@ -115,15 +119,17 @@ class _HDFhomeState extends State<HDFhome> {
         child: Scaffold(
           appBar: AppBar(
             centerTitle: true,
+            brightness: Brightness.light,
+            leading: new Container(),
             title: Text(
               'ULPI Health Declaration',
               style: TextStyle(
                   fontFamily: 'Open Sans',
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w700,
                   color: Colors.black),
             ),
-            elevation: 10,
+            elevation: 6,
             backgroundColor: Colors.white,
             actions: [
               Padding(

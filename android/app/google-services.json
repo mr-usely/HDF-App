@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "380060219495",
+    "firebase_url": "https://health-declaration-1f078.firebaseio.com",
+    "project_id": "health-declaration-1f078",
+    "storage_bucket": "health-declaration-1f078.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380060219495:android:e9b18a49f130420083fcc2",
+        "android_client_info": {
+          "package_name": "com.example.HDF_App"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "380060219495-bo6ojq182aogrph0oog0gm8oi7hdd965.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAt_BaEWv-BlDRbl_bsb1vq69QwzLTFquk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "380060219495-bo6ojq182aogrph0oog0gm8oi7hdd965.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
