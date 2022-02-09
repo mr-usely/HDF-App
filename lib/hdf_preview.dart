@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:HDF_App/dash.dart';
+import 'package:hdf_app/dash.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:hdf_app/Class/Servers.dart';
 
 MediaQueryData queryData;
 
@@ -56,9 +57,8 @@ class _HDFPreviewState extends State<HDFPreview> {
 
   Future<List> getJsonData() async {
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?Get_Form_Data=" +
-            '$idEmployee';
-    http.Response response = await http.get(urlApi);
+        "${Servers.serverURL}/HDF_app/index.php?Get_Form_Data=" + '$idEmployee';
+    http.Response response = await http.get(Uri.parse(urlApi));
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
     } else {

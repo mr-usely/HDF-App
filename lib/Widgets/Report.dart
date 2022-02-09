@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hdf_app/Class/Servers.dart';
 import 'package:http/http.dart' as http;
-import 'package:HDF_App/hdf_preview.dart';
+import 'package:hdf_app/hdf_preview.dart';
 
 class Reports extends StatefulWidget {
   final int idname;
@@ -79,8 +80,8 @@ class _ReportsState extends State<Reports> {
   //getting the Not Completed Data
   Future<List> getDeptData(int id) async {
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?department=" + '$id';
-    http.Response response = await http.get(urlApi);
+        "${Servers.serverURL}/HDF_app/index.php?department=" + '$id';
+    http.Response response = await http.get(Uri.parse(urlApi));
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
     } else {
@@ -127,8 +128,8 @@ class _ReportsState extends State<Reports> {
   //getting the Summary List
   Future<List> getJsonData(String dept) async {
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?Summary=$idname&dept=$dept";
-    http.Response response = await http.get(urlApi);
+        "${Servers.serverURL}/HDF_app/index.php?Summary=$idname&dept=$dept";
+    http.Response response = await http.get(Uri.parse(urlApi));
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
     } else {
@@ -139,8 +140,8 @@ class _ReportsState extends State<Reports> {
   //getting the High Temperature List
   Future<List> getJsonData2(String dept) async {
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?HighTemp=$idname&dept=$dept";
-    http.Response response = await http.get(urlApi);
+        "${Servers.serverURL}/HDF_app/index.php?HighTemp=$idname&dept=$dept";
+    http.Response response = await http.get(Uri.parse(urlApi));
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
     } else {
@@ -151,8 +152,8 @@ class _ReportsState extends State<Reports> {
   //getting the Symptoms List
   Future<List> getJsonData3(String dept) async {
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?Symptoms=$idname&dept=$dept";
-    http.Response response = await http.get(urlApi);
+        "${Servers.serverURL}/HDF_app/index.php?Symptoms=$idname&dept=$dept";
+    http.Response response = await http.get(Uri.parse(urlApi));
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
     } else {
@@ -411,6 +412,7 @@ class _ReportsState extends State<Reports> {
   }
 
   List<DropdownMenuItem<ListItem>> buildDropDownMenuItems(List listItems) {
+    // ignore: deprecated_member_use
     List<DropdownMenuItem<ListItem>> items = List();
     for (ListItem listItem in listItems) {
       items.add(
@@ -640,18 +642,6 @@ class _ReportsState extends State<Reports> {
                       textAlign: TextAlign.center,
                       style: TextStyle(fontWeight: FontWeight.w800)),
                 ),
-                // SizedBox(
-                //   width: 1,
-                //   height: 20,
-                //   child: Container(color: Colors.black12),
-                // ),
-                // Container(
-                //   width: queryData.size.width * 1 / 4,
-                //   margin: const EdgeInsets.only(left: 5, right: 5),
-                //   child: Text('Employee ID',
-                //       textAlign: TextAlign.center,
-                //       style: TextStyle(fontWeight: FontWeight.w800)),
-                // ),
                 SizedBox(
                   width: 1,
                   height: 20,
@@ -735,16 +725,6 @@ class _ReportsState extends State<Reports> {
                                             style: TextStyle(
                                                 fontWeight: FontWeight.w600)),
                                       ),
-                                      // Container(
-                                      //   width: queryData.size.width * 0.90 / 4,
-                                      //   margin: const EdgeInsets.only(
-                                      //       left: 5, right: 5),
-                                      //   child: Text(
-                                      //       highTempList[index].id.toString(),
-                                      //       textAlign: TextAlign.center,
-                                      //       style: TextStyle(
-                                      //           fontWeight: FontWeight.w600)),
-                                      // ),
                                       Container(
                                         width: queryData.size.width * 0.80 / 3,
                                         margin: const EdgeInsets.only(

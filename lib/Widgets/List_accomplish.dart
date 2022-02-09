@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:HDF_App/hdf_form.dart';
-import 'package:HDF_App/hdf_preview.dart';
+import 'package:hdf_app/hdf_form.dart';
+import 'package:hdf_app/hdf_preview.dart';
+import 'package:hdf_app/Class/Servers.dart';
 import 'package:http/http.dart' as http;
 
 class ListAccomplish extends StatefulWidget {
@@ -64,8 +65,8 @@ class _ListAccomplishState extends State<ListAccomplish> {
   //getting the Not Completed Data
   Future<List> getDeptData(int id) async {
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?department=" + '$id';
-    http.Response response = await http.get(urlApi);
+        "${Servers.serverURL}/HDF_app/index.php?department=" + '$id';
+    http.Response response = await http.get(Uri.parse(urlApi));
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
     } else {
@@ -111,9 +112,9 @@ class _ListAccomplishState extends State<ListAccomplish> {
 
   //getting the Not Completed Data
   Future<List> getJsonData(String dept, String search) async {
-    String urlApi = "http://203.177.199.130:8012/HDF_app/index.php?ID=" +
+    String urlApi = "${Servers.serverURL}/HDF_app/index.php?ID=" +
         '$idname&dept=$dept&search=$search';
-    http.Response response = await http.get(urlApi);
+    http.Response response = await http.get(Uri.parse(urlApi));
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
     } else {
@@ -194,10 +195,9 @@ class _ListAccomplishState extends State<ListAccomplish> {
 
   //Getting the Accomplished Data
   Future<List> getAccomplishedData(String dept, String search) async {
-    String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?Accomplished=" +
-            '$idname&dept=$dept&search=$search';
-    http.Response response = await http.get(urlApi);
+    String urlApi = "${Servers.serverURL}/HDF_app/index.php?Accomplished=" +
+        '$idname&dept=$dept&search=$search';
+    http.Response response = await http.get(Uri.parse(urlApi));
     return json.decode(response.body);
   }
 
@@ -375,14 +375,6 @@ class _ListAccomplishState extends State<ListAccomplish> {
                     style: BorderStyle.solid))),
         child: Column(
           children: <Widget>[
-            // SizedBox(
-            //     height: 2,
-            //     width: 395,
-            //     child: Container(
-            //       margin: const EdgeInsets.only(left: 100),
-            //       color: Color.fromRGBO(16, 204, 169, 1),
-            //     )),
-            // Table header
             Container(
               margin:
                   const EdgeInsets.only(left: 5, top: 20, right: 5, bottom: 10),

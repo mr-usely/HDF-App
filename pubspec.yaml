@@ -1,4 +1,4 @@
-name: HDF_App
+name: hdf_app
 description: A new Flutter project.
 
 # The following line prevents the package from being accidentally published to
@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.0.0+1
+version: 1.1.6+37
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
@@ -26,27 +26,28 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^0.1.3
-  http: ^0.12.2
+  cupertino_icons: ^1.0.3
+  http: ^0.13.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  change_app_package_name: ^0.1.2
-  connectivity: ^0.4.9+3
-  device_info: ^0.4.0+1
+  change_app_package_name: ^1.0.0
+  connectivity: ^3.0.6
+  device_info: ^2.0.2
   ext_storage: ^1.0.3
-  firebase_messaging: ^7.0.3
-  flutter_launcher_icons: ^0.8.0
+  firebase_core: ^1.2.1
+  flutter_launcher_icons: ^0.9.0
   flutter_statusbarcolor: ^0.2.3
   imei_plugin: ^1.0.1
   incrementally_loading_listview: ^0.3.0
   install_plugin: ^2.0.1
-  ota_update: ^2.4.1
-  package_info: ^0.4.3
-  path_provider: ^1.3.1
-  permission_handler: ^5.0.1+1
-  url_launcher: ^5.7.0
+  ota_update: ^3.0.2
+  package_info: ^2.0.2
+  path_provider: ^2.0.2
+  permission_handler: ^8.0.1
+  telephony: ^0.1.2
+  url_launcher: ^6.0.6
 
 flutter_icons:
   android: "launcher_icon"

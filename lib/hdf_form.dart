@@ -4,7 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:HDF_App/dash.dart';
+import 'package:hdf_app/dash.dart';
+import 'package:hdf_app/Class/Servers.dart';
 
 class HDFform extends StatefulWidget {
   final int id;
@@ -193,15 +194,15 @@ class _HDFformState extends State<HDFform> {
                   "Invalid Temperature: Your temperature is too High or too Low.";
               showTooltip = true;
             });
-            //showInvalidTemp(context, 'invalidTemp');
+            // showInvalidTemp(context, 'invalidTemp');
           } else if (termsConditions == 'IAgree' &&
               value == true &&
               temperatureController.text.isNotEmpty) {
             iAgree = 1;
-            //hold2 = secondQuestion;
+            // hold2 = secondQuestion;
             if (symptoms['noneAbove'] == false) {
-              String url = "http://203.177.199.130:8012/HDF_app/index.php";
-              var res = await http.post(Uri.encodeFull(url), headers: {
+              String url = "${Servers.serverURL}/HDF_app/index.php";
+              var res = await http.post(Uri.parse(url), headers: {
                 "Accept": "application/json"
               }, body: {
                 "HDFForm": "Form_Answer",
@@ -257,8 +258,8 @@ class _HDFformState extends State<HDFform> {
             } else if (others['others'] == true &&
                 othersController.text.isNotEmpty) {
               iAgree = 1;
-              String url = "http://203.177.199.130:8012/HDF_app/index.php";
-              var res = await http.post(Uri.encodeFull(url), headers: {
+              String url = "${Servers.serverURL}/HDF_app/index.php";
+              var res = await http.post(Uri.parse(url), headers: {
                 "Accept": "application/json"
               }, body: {
                 "HDFForm": "Form_Answer",
@@ -298,8 +299,8 @@ class _HDFformState extends State<HDFform> {
               }
             } else if (symptoms['noneAbove'] == true) {
               iAgree = 1;
-              String url = "http://203.177.199.130:8012/HDF_app/index.php";
-              var res = await http.post(Uri.encodeFull(url), headers: {
+              String url = "${Servers.serverURL}/HDF_app/index.php";
+              var res = await http.post(Uri.parse(url), headers: {
                 "Accept": "application/json"
               }, body: {
                 "HDFForm": "Form_Answer",
@@ -388,6 +389,7 @@ class _HDFformState extends State<HDFform> {
     } else {
       userId = id;
     }
+
     _focusNode = new FocusNode();
     _focusNode.addListener(() {
       if (double.parse(text) >= 37.5 && double.parse(text) <= 45.5) {
@@ -493,7 +495,8 @@ class _HDFformState extends State<HDFform> {
                                     autocorrect: true,
                                     autofocus: true,
                                     keyboardType: TextInputType.number,
-                                    maxLengthEnforced: true,
+                                    maxLengthEnforcement:
+                                        MaxLengthEnforcement.enforced,
                                     maxLength: 4,
                                     onChanged: (String _text) {
                                       setState(() {
@@ -1275,11 +1278,14 @@ class _HDFformState extends State<HDFform> {
 
   void _showToast(BuildContext context) {
     final scaffold = Scaffold.of(context);
+    // ignore: deprecated_member_use
     scaffold.showSnackBar(
       SnackBar(
         content: const Text('Your temperature is too low to declare a fever'),
         action: SnackBarAction(
-            label: 'UNDO', onPressed: scaffold.hideCurrentSnackBar),
+            // ignore: deprecated_member_use
+            label: 'UNDO',
+            onPressed: scaffold.hideCurrentSnackBar),
       ),
     );
   }

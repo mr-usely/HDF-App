@@ -1,14 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:HDF_App/hdf_form.dart';
-import 'package:HDF_App/dash.dart';
+import 'package:hdf_app/hdf_form.dart';
+import 'package:hdf_app/dash.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'package:device_info/device_info.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:hdf_app/Class/Servers.dart';
 
 class LogInPage extends StatefulWidget {
   final String emei;
@@ -17,7 +18,7 @@ class LogInPage extends StatefulWidget {
   _LogInPageState createState() => _LogInPageState(emei);
 }
 
-final _formKey = GlobalKey<FormState>();
+// final _formKey = GlobalKey<FormState>();
 MediaQueryData queryData;
 
 class User {
@@ -66,11 +67,32 @@ class _LogInPageState extends State<LogInPage> {
     await file.writeAsString(text);
   }
 
+  Future<List> requestValidation() async {
+    String urlApi = "${Servers.serverURL}/HDF_app/index.php?request=" +
+        '${_usernameController.text}' +
+        "&DeviceName=" +
+        '${androidDeviceInfo.model}' +
+        "&DeviceID=" +
+        '${androidDeviceInfo.id}' +
+        "&Emei=" +
+        '$emei';
+    http.Response response = await http.get(Uri.parse(urlApi));
+    return json.decode(response.body);
+  }
+
+  getRequest() async {
+    List _jsonValue = await requestValidation();
+    for (var i = 0; i < _jsonValue.length; i++) {
+      print(_jsonValue[i]['apikey']);
+      _write(_jsonValue[i]['apikey']);
+    }
+  }
+
   navigate() async {
     androidDeviceInfo = await deviceInfo.androidInfo;
     try {
-      String url = "http://203.177.199.130:8012/HDF_app/index.php";
-      var res = await http.post(Uri.encodeFull(url), headers: {
+      String url = "${Servers.serverURL}/HDF_app/index.php";
+      var res = await http.post(Uri.parse(url), headers: {
         "Accept": "application/json"
       }, body: {
         "Authenticate": "HDF_App_Authentication",
@@ -91,7 +113,7 @@ class _LogInPageState extends State<LogInPage> {
 
         String resBody = json.decode(res.body);
         if (resBody == "HDF_Auth_Success") {
-          var respo = await http.post(Uri.encodeFull(url), headers: {
+          var respo = await http.post(Uri.parse(url), headers: {
             "Accept": "application/json"
           }, body: {
             "getName": _usernameController.text,
@@ -101,8 +123,8 @@ class _LogInPageState extends State<LogInPage> {
             print(json.decode(respo.body));
 
             if (json.decode(respo.body) == "change_device") {
-              showChangeDevice(context, androidDeviceInfo.model,
-                  androidDeviceInfo.id, _usernameController.text, emei);
+              getRequest();
+              showChangeDevice(context);
             } else {
               Map userMap = jsonDecode(respo.body);
               var response = User.fromJson(userMap);
@@ -134,8 +156,8 @@ class _LogInPageState extends State<LogInPage> {
             print("empty");
           }
         } else if (resBody == "change_device") {
-          showChangeDevice(context, androidDeviceInfo.model,
-              androidDeviceInfo.id, _usernameController.text, emei);
+          getRequest();
+          showChangeDevice(context);
         } else if (_usernameController.text.isEmpty ||
             _passwordController.text.isEmpty) {
           showAlertDialog2(context);
@@ -176,126 +198,123 @@ class _LogInPageState extends State<LogInPage> {
                 elevation: 0,
                 toolbarHeight: 0,
               ),
-              body: Form(
-                key: _formKey,
-                child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        image: DecorationImage(
-                            image: AssetImage("asset/img/bg.png"),
-                            fit: BoxFit.cover)),
-                    child: ListView(
-                      children: <Widget>[
-                        Container(
-                          margin: const EdgeInsets.only(left: 20, top: 10),
-                          child: Padding(
-                              padding: const EdgeInsets.only(top: 25),
-                              child: Row(
-                                children: <Widget>[
-                                  Image.asset(
-                                    'asset/img/HDF-logo.png',
-                                    height: 60,
-                                    width: 60,
-                                  ),
-                                  SizedBox(
-                                    width: 5,
-                                  ),
-                                  Text(
-                                    'Health\nDeclaration',
-                                    style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.5,
-                                      color: Colors.black87,
-                                    ),
-                                  )
-                                ],
-                              )),
-                        ),
-                        SizedBox(
-                          height: queryData.size.height / 100 * 20,
-                        ),
-                        Container(
-                            alignment: Alignment.center,
-                            margin: const EdgeInsets.only(left: 20, right: 20),
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      spreadRadius: 5,
-                                      blurRadius: 20,
-                                      offset: Offset(0, 0))
-                                ]),
-                            child: Column(
+              body: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      image: DecorationImage(
+                          image: AssetImage("asset/img/bg.png"),
+                          fit: BoxFit.cover)),
+                  child: ListView(
+                    children: <Widget>[
+                      Container(
+                        margin: const EdgeInsets.only(left: 20, top: 10),
+                        child: Padding(
+                            padding: const EdgeInsets.only(top: 25),
+                            child: Row(
                               children: <Widget>[
-                                Container(
+                                Image.asset(
+                                  'asset/img/HDF-logo.png',
+                                  height: 60,
+                                  width: 60,
+                                ),
+                                SizedBox(
+                                  width: 5,
+                                ),
+                                Text(
+                                  'Health\nDeclaration',
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                    color: Colors.black87,
+                                  ),
+                                )
+                              ],
+                            )),
+                      ),
+                      SizedBox(
+                        height: queryData.size.height / 100 * 20,
+                      ),
+                      Container(
+                          alignment: Alignment.center,
+                          margin: const EdgeInsets.only(left: 20, right: 20),
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.grey.withOpacity(0.3),
+                                    spreadRadius: 5,
+                                    blurRadius: 20,
+                                    offset: Offset(0, 0))
+                              ]),
+                          child: Column(
+                            children: <Widget>[
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                margin: const EdgeInsets.only(
+                                    top: 30, bottom: 12, left: 20, right: 20),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 20, right: 20),
+                                  child: TextFormField(
+                                    controller: _usernameController,
+                                    decoration: InputDecoration(
+                                        labelText: 'Username',
+                                        focusedBorder: InputBorder.none,
+                                        border: InputBorder.none),
+                                  ),
+                                ),
+                              ),
+                              Container(
                                   decoration: BoxDecoration(
                                     color: Colors.grey.withOpacity(0.08),
                                     borderRadius: BorderRadius.circular(30),
                                   ),
                                   margin: const EdgeInsets.only(
-                                      top: 30, bottom: 12, left: 20, right: 20),
+                                      bottom: 30, left: 20, right: 20),
                                   child: Padding(
                                     padding: const EdgeInsets.only(
                                         left: 20, right: 20),
                                     child: TextFormField(
-                                      controller: _usernameController,
+                                      controller: _passwordController,
+                                      obscuringCharacter: '•',
+                                      obscureText: true,
                                       decoration: InputDecoration(
-                                          labelText: 'Username',
+                                          labelText: 'Password',
                                           focusedBorder: InputBorder.none,
                                           border: InputBorder.none),
                                     ),
-                                  ),
+                                  )),
+                            ],
+                          )),
+                      Container(
+                          margin: const EdgeInsets.only(left: 220, top: 15),
+                          child: new SizedBox(
+                            height: 40,
+                            child: FlatButton(
+                              onPressed: navigate,
+                              child: const Text(
+                                'LOG IN',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  letterSpacing: 1,
                                 ),
-                                Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.withOpacity(0.08),
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    margin: const EdgeInsets.only(
-                                        bottom: 30, left: 20, right: 20),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(
-                                          left: 20, right: 20),
-                                      child: TextFormField(
-                                        controller: _passwordController,
-                                        obscuringCharacter: '•',
-                                        obscureText: true,
-                                        decoration: InputDecoration(
-                                            labelText: 'Password',
-                                            focusedBorder: InputBorder.none,
-                                            border: InputBorder.none),
-                                      ),
-                                    )),
-                              ],
-                            )),
-                        Container(
-                            margin: const EdgeInsets.only(left: 220, top: 15),
-                            child: new SizedBox(
-                              height: 40,
-                              child: FlatButton(
-                                onPressed: navigate,
-                                child: const Text(
-                                  'LOG IN',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                                color: Color.fromARGB(220, 16, 204, 169),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(35),
-                                        bottomLeft: Radius.circular(35))),
                               ),
-                            ))
-                      ],
-                    )),
-              ),
+                              color: Color.fromARGB(220, 16, 204, 169),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(35),
+                                      bottomLeft: Radius.circular(35))),
+                            ),
+                          ))
+                    ],
+                  )),
             ),
             onWillPop: () => showDialog<bool>(
                   context: context,
@@ -388,42 +407,14 @@ showAlertDialog2(BuildContext context) {
   );
 }
 
-showChangeDevice(BuildContext context, String devicename, String deviceid,
-    String username, String emei) {
-  _write2(String text) async {
-    final Directory directory = await getApplicationDocumentsDirectory();
-    final File file = File('${directory.path}/api.txt');
-    await file.writeAsString(text);
-  }
-
-  Future<List> requestValidation() async {
-    String urlApi = "http://203.177.199.130:8012/HDF_app/index.php?request=" +
-        '$username' +
-        "&DeviceName=" +
-        '$devicename' +
-        "&DeviceID=" +
-        '$deviceid' +
-        "&Emei=" +
-        '$emei';
-    http.Response response = await http.get(urlApi);
-    return json.decode(response.body);
-  }
-
-  getRequest() async {
-    List _jsonValue = await requestValidation();
-    for (var i = 0; i < _jsonValue.length; i++) {
-      print(_jsonValue[i]['apikey']);
-      _write2(_jsonValue[i]['apikey']);
-    }
-  }
-
+showChangeDevice(BuildContext context) {
   //buttons
   Widget yesButton = FlatButton(
       onPressed: () {
-        getRequest();
         launch("tel://09178217909");
       },
       child: Text('Yes'));
+
   Widget noButton = FlatButton(
       onPressed: () {
         SystemChannels.platform.invokeMethod('SystemNavigator.pop');
@@ -450,7 +441,6 @@ showChangeDevice(BuildContext context, String devicename, String deviceid,
   showDialog(
     context: context,
     builder: (BuildContext context) {
-      getRequest();
       return alert1;
     },
   );

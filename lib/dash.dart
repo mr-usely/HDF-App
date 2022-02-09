@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'Widgets/List_accomplish.dart';
+//import 'Widgets/side-menu.dart';
 import 'Widgets/Report.dart';
 
 class HDFhome extends StatefulWidget {
   final int idname;
   final String encoder;
-  HDFhome({Key key, @required this.idname, this.encoder}) : super(key: key);
+  final String name;
+  final String position;
+  HDFhome(
+      {Key key, @required this.idname, this.encoder, this.name, this.position})
+      : super(key: key);
   @override
-  _HDFhomeState createState() => _HDFhomeState(idname, encoder);
+  _HDFhomeState createState() => _HDFhomeState(idname, encoder, name, position);
 }
 
 MediaQueryData queryData;
@@ -16,7 +22,10 @@ MediaQueryData queryData;
 class _HDFhomeState extends State<HDFhome> {
   int idname;
   String encoder;
-  _HDFhomeState(this.idname, this.encoder);
+  String name;
+  String position;
+  _HDFhomeState(this.idname, this.encoder, this.name, this.position);
+  var scaffoldKey = GlobalKey<ScaffoldState>();
 
   int tabs = 1;
   int id = 7;
@@ -117,10 +126,21 @@ class _HDFhomeState extends State<HDFhome> {
     );
     return WillPopScope(
         child: Scaffold(
+          // key: scaffoldKey,
+          // drawer: SideBar(
+          //   name: name,
+          //   position: position,
+          // ),
           appBar: AppBar(
             centerTitle: true,
             brightness: Brightness.light,
-            leading: new Container(),
+            // leading: IconButton(
+            //   icon: Icon(Icons.menu),
+            //   color: Color.fromRGBO(16, 204, 169, 1),
+            //   onPressed: () {
+            //     scaffoldKey.currentState.openDrawer();
+            //   },
+            // ),
             title: Text(
               'ULPI Health Declaration',
               style: TextStyle(

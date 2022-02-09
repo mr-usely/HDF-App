@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:HDF_App/login_page.dart';
-import 'package:HDF_App/hdf_form.dart';
-import 'package:HDF_App/dash.dart';
+import 'package:hdf_app/login_page.dart';
+import 'package:hdf_app/hdf_form.dart';
+import 'package:hdf_app/dash.dart';
+import 'package:hdf_app/change-pass.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -13,10 +14,11 @@ import 'package:connectivity/connectivity.dart';
 import 'package:http/http.dart' as http;
 import 'package:imei_plugin/imei_plugin.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:package_info/package_info.dart';
-import 'package:HDF_App/verify.dart';
+import 'package:hdf_app/verify.dart';
 import 'package:ext_storage/ext_storage.dart';
+import 'package:hdf_app/Class/Servers.dart';
 
 void main() {
   runApp(new MyApp());
@@ -61,10 +63,11 @@ class _DashboardState extends State<Dashboard> {
   // Declare Variable for getting the device model
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
   AndroidDeviceInfo androidDeviceInfo;
-  FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+  // FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   int network = 0;
 
+  var changepage = false;
   String _platformImei = 'Unknown';
   String uniqueId = "Unknown";
 
@@ -74,9 +77,8 @@ class _DashboardState extends State<Dashboard> {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String version = packageInfo.version;
     String urlApi =
-        "http://203.177.199.130:8012/HDF_app/index.php?app_update=" +
-            '$version';
-    http.Response response = await http.get(urlApi);
+        "${Servers.serverURL}/HDF_app/index.php?app_update=" + '$version';
+    http.Response response = await http.get(Uri.parse(urlApi));
     if (json.decode(response.body) != null) {
       return json.decode(response.body);
     } else {
@@ -86,38 +88,40 @@ class _DashboardState extends State<Dashboard> {
 
   fetchdata() async {
     try {
-      final result = await InternetAddress.lookup('google.com');
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        if (getJsonData() != null) {
-          String _jsonValue = await getJsonData();
+      try {
+        final result = await InternetAddress.lookup('google.com');
+        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+          if (getJsonData() != null) {
+            String _jsonValue = await getJsonData();
 
-          if (_jsonValue != null) {
-            print(_jsonValue);
-            if (_jsonValue != 'old version') {
-              setState(() {
-                network = 1;
-              });
-              updateDialog(context, _jsonValue);
-            } else {
-              PackageInfo packageInfo = await PackageInfo.fromPlatform();
-              String version = packageInfo.version;
-              setState(() {
-                network = 0;
-              });
-              var path = await ExtStorage.getExternalStoragePublicDirectory(
-                  ExtStorage.DIRECTORY_DOWNLOADS);
-              final dir = Directory(path + '/ulpi_hdfv{$version}.apk');
-              dir.deleteSync(recursive: true);
-            }
+            if (_jsonValue != null) {
+              print(_jsonValue);
+              if (_jsonValue != 'old version') {
+                setState(() {
+                  network = 1;
+                });
+                updateDialog(context, _jsonValue);
+              } else {
+                PackageInfo packageInfo = await PackageInfo.fromPlatform();
+                String version = packageInfo.version;
+                setState(() {
+                  network = 0;
+                });
+                var path = await ExtStorage.getExternalStoragePublicDirectory(
+                    ExtStorage.DIRECTORY_DOWNLOADS);
+                final dir = Directory(path + '/ulpi_hdfv{$version}.apk');
+                dir.deleteSync(recursive: true);
+              }
+            } else {}
           } else {}
-        } else {}
+        }
+      } catch (_) {
+        print(_);
       }
     } on SocketException catch (_) {
       internetAlertDialog(context);
     }
   }
-
-  var changepage = false;
 
   _write(String text) async {
     final Directory directory = await getApplicationDocumentsDirectory();
@@ -191,8 +195,8 @@ class _DashboardState extends State<Dashboard> {
             });
           }
 
-          String url = "http://203.177.199.130:8012/HDF_app/index.php";
-          var res = await http.post(Uri.encodeFull(url), headers: {
+          String url = "${Servers.serverURL}/HDF_app/index.php";
+          var res = await http.post(Uri.parse(url), headers: {
             "Accept": "application/json"
           }, body: {
             "APIkey": _text,
@@ -216,11 +220,24 @@ class _DashboardState extends State<Dashboard> {
             if (json.decode(res.body) == "change_device") {
               setState(() {
                 changepage = true;
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LogInPage(emei: _platformImei),
+                    ));
               });
             } else if (json.decode(res.body) == "none") {
               setState(() {
                 changepage = true;
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LogInPage(emei: _platformImei),
+                    ));
               });
+            } else if (json.decode(res.body) == "false") {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => ChangePass()));
             } else {
               Map user = jsonDecode(res.body);
               var response = User.fromJson(user);
@@ -245,9 +262,10 @@ class _DashboardState extends State<Dashboard> {
                   context,
                   MaterialPageRoute(
                       builder: (context) => HDFhome(
-                            idname: id,
-                            encoder: '${response.name}',
-                          )),
+                          idname: id,
+                          encoder: '${response.name}',
+                          name: '${response.name}',
+                          position: '${response.position}')),
                 );
               }
             }
@@ -271,7 +289,7 @@ class _DashboardState extends State<Dashboard> {
       final result = await InternetAddress.lookup('google.com');
       if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
         // check if theres a new update in the server
-        //fetchdata();
+        fetchdata();
       } else {
         showAlertDialog(context, "internet");
         print('Check Connection failed');
@@ -291,22 +309,12 @@ class _DashboardState extends State<Dashboard> {
     _connectivity.myStream.listen((source) {
       setState(() => _source = source);
     });
-    // Firebase notification
-    _firebaseMessaging.configure(
-      onMessage: (Map<String, dynamic> message) async {
-        print("onMessage: $message");
-        //_showItemDialog(message);
-      },
-      onBackgroundMessage: myBackgroundMessageHandler,
-      onLaunch: (Map<String, dynamic> message) async {
-        print("onLaunch: $message");
-        //_navigateToItemDetail(message);
-      },
-      onResume: (Map<String, dynamic> message) async {
-        print("onResume: $message");
-        // _navigateToItemDetail(message);
-      },
-    );
+
+    // _firebaseMessaging.getToken().then((token) {
+    //   print(token);
+    // });
+
+    //_firebaseMessaging.subscribeToTopic(topic)
   }
 
   @override
@@ -354,6 +362,7 @@ class _DashboardState extends State<Dashboard> {
           break;
         case ConnectivityResult.mobile:
           if (network == 0) {
+            network = 1;
             checkNetwork();
             if (changepage == true) {
               page = LogInPage(emei: _platformImei);
@@ -362,6 +371,7 @@ class _DashboardState extends State<Dashboard> {
           break;
         case ConnectivityResult.wifi:
           if (network == 0) {
+            network = 1;
             checkNetwork();
             if (changepage == true) {
               page = LogInPage(emei: _platformImei);

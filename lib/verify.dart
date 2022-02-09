@@ -4,6 +4,7 @@ import 'package:ota_update/ota_update.dart';
 import 'package:platform/platform.dart';
 import 'package:ext_storage/ext_storage.dart';
 import 'package:install_plugin/install_plugin.dart';
+import 'package:hdf_app/Class/Servers.dart';
 
 class DailyReport extends StatefulWidget {
   final String appName;
@@ -27,7 +28,7 @@ class _DailyReportState extends State<DailyReport> {
     try {
       OtaUpdate()
           .execute(
-        'http://203.177.199.130:8012/HDF_app/app_updates/$appName',
+        '${Servers.serverURL}/HDF_app/app_updates/$appName',
         destinationFilename: '$appName',
         //FOR NOW ANDROID ONLY - ABILITY TO VALIDATE CHECKSUM OF FILE:
         sha256checksum:
